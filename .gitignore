@@ -2,3 +2,6 @@
 .vagrant
 doc/
 ebin/
+erlking
+*.plt
+.global_plt.*
