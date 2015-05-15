@@ -1,5 +1,6 @@
 .rebar
 .vagrant
+.eunit
 doc/
 ebin/
 erlking
