@@ -3,21 +3,50 @@ NAME = erlking
 REBAR = ./rebar
 COMPILECMD = $(REBAR) compile
 CLEANCMD   = $(REBAR) clean
+DOCCMD     = $(REBAR) doc
+ESCRPTCMD  = $(REBAR) escriptize
+TESTCMD    = $(REBAR) eunit
+REPLCMD    = $(REBAR) shell
+
+DIALYZER = dialyzer
 
 ERLANG  = erl
 BEAMDIR = ebin
 
-ERLFILES    = $(wildcard src/*.erl)
-BEAMFILES   = $(ERLFILES:src/%.erl=$(BEAMDIR)/%.beam)
-APPSRCFILES = $(wildcard src/*.app.src)
-APPFILES    = $(APPSRCFILES:src/%.src=$(BEAMDIR)/%)
+SRCDIR      = src
+ERLFILES    = $(wildcard $(SRCDIR)/*.erl)
+BEAMFILES   = $(ERLFILES:$(SRCDIR)/%.erl=$(BEAMDIR)/%.beam)
+APPSRCFILES = $(wildcard $(SRCDIR)/*.app.src)
+APPFILES    = $(APPSRCFILES:$(SRCDIR)/%.src=$(BEAMDIR)/%)
 
-BINFILES    = $(APPFILES) $(BEAMFILES)
+OBJFILES    = $(APPFILES) $(BEAMFILES)
+BIN         = $(NAME)
 
-all: $(BINFILES)
+OTPVERSION  = $(shell erl -noshell -eval 'io:format(erlang:system_info(otp_release)), halt().')
+OTPPLTFILE  = .global_plt.$(OTPVERSION)
+PLTFILE     = erlking.plt
 
-run: all
-	@$(ERLANG) -pa $(BEAMDIR) -eval 'application:ensure_all_started(erlking).' -noshell
+
+all: $(BIN) doc
+
+run: $(BIN)
+	#$(ERLANG) -pa $(BEAMDIR) -eval 'application:ensure_all_started(erlking).' -noshell
+	@./$(BIN)
+
+repl: $(OBJFILES)
+	@$(REPLCMD)
+.PHONY: repl
+
+test: $(OBJFILES)
+	@$(TESTCMD)
+.PHONY: test
+
+typecheck: $(PLTFILE) $(OTPPLTFILE)
+	@$(DIALYZER) --plts $(OTPPLTFILE) $(PLTFILE) -Wrace_conditions --src $(SRCDIR)
+
+doc:
+	@$(DOCCMD)
+.PHONY: doc
 
 name:
 	@echo $(NAME)
@@ -30,8 +59,17 @@ clean:
 rebuild: clean all
 .PHONY: rebuild
 
-ebin/%.beam: src/%.erl
+$(BIN): $(OBJFILES)
+	@$(ESCRPTCMD)
+
+ebin/%.beam: $(SRCDIR)/%.erl
 	@$(COMPILECMD)
 
-ebin/%.app: src/%.app.src
+ebin/%.app: $(SRCDIR)/%.app.src
 	@$(COMPILECMD)
+
+$(PLTFILE): $(OBJFILES)
+	@$(DIALYZER) --output_plt $@ --build_plt -r ebin
+
+$(OTPPLTFILE):
+	@$(DIALYZER) --output_plt $@ --build_plt --apps edoc erts eunit kernel mnesia stdlib tools webtool xmerl
