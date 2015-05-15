@@ -5,7 +5,7 @@
 -module (matrix).
 
 -export ([transpose/1, get_line_vector/2, get_column_vector/2, num_rows/1,
-          num_cols/1, matrix/3]).
+          num_cols/1, matrix/3, at/3]).
 -export_type ([t/0, t/1]).
 
 -ifdef (TEST).
@@ -93,6 +93,15 @@ get_line_vector(Matrix, Line) ->
 -spec get_column_vector(t(), non_neg_integer()) -> vector:t().
 get_column_vector(Matrix, Column) ->
   get_line_vector(transpose(Matrix), Column).
+
+% ==============================================================================
+% Retrieve single elements
+% ==============================================================================
+
+-spec at(t(A), non_neg_integer(), non_neg_integer()) -> A.
+at(M, X, Y) ->
+  V = lists:nth(Y + 1, M),
+  lists:nth(X + 1, V).
 
 % ==============================================================================
 % Tests
