@@ -1,6 +1,7 @@
 NAME = erlking
 
 REBAR = ./rebar
+DEPSLVCMD  = $(REBAR) get-deps
 COMPILECMD = $(REBAR) compile
 CLEANCMD   = $(REBAR) clean
 DOCCMD     = $(REBAR) doc
@@ -62,10 +63,12 @@ rebuild: clean all
 $(BIN): $(OBJFILES)
 	@$(ESCRPTCMD)
 
-ebin/%.beam: $(SRCDIR)/%.erl
+ebin/%.beam: $(SRCDIR)/%.erl rebar.config
+	@$(DEPSLVCMD)
 	@$(COMPILECMD)
 
-ebin/%.app: $(SRCDIR)/%.app.src
+ebin/%.app: $(SRCDIR)/%.app.src rebar.config
+	@$(DEPSLVCMD)
 	@$(COMPILECMD)
 
 $(PLTFILE): $(OBJFILES)
