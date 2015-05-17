@@ -3,7 +3,7 @@
 -type t() :: matrix:t(byte()).
 
 -export ([parse_board/1, grav_board/1, at/2, at/3, flood_find/3,
-          find_clickables/1]).
+          find_clickables/1, makemove/2]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -36,6 +36,9 @@ at(Board, X, Y) ->
 at(Board, {X, Y}) ->
   at(Board, X, Y).
 
+makemove(Board, {X, Y}) ->
+  flood_fill(Board, X, Y).
+
 -spec find_clickables(t()) -> [{non_neg_integer(), non_neg_integer()}].
 find_clickables(Board) ->
   find_clickables(Board, Board, 0, 0, [], sets:new()).
@@ -62,6 +65,32 @@ find_clickables(Board, [[_|Fs]|Fss], X, Y, Acc, Checked) ->
       end,
       find_clickables(Board, [Fs|Fss], X, Y+1, NewAcc, NewChecked)
   end.
+
+flood_fill(Board, X, Y) ->
+  Color = at(Board, X, Y),
+  if Color /= 0 ->
+    FieldsSet = flood_find(Board, matrix:num_cols(Board), matrix:num_rows(Board), Color, [{X, Y}], sets:new()),
+    StonesAffected = sets:size(FieldsSet),
+    Score = (StonesAffected - 1) * (StonesAffected - 1),
+    TemporaryBoard = fill(Board, FieldsSet, 0, 0),
+    NewBoard = grav_board(TemporaryBoard);
+  true ->
+    Score = 0,
+    NewBoard = Board
+  end,
+  {NewBoard, Score}.
+
+fill([], _, _, _) -> [];
+fill([Fs|Fss], Stones, X, Y) ->
+  [fill_line(Fs, Stones, X, Y) | fill(Fss, Stones, X+1, Y)].
+
+fill_line([], _, _, _) -> [];
+fill_line([F|Fs], Stones, X, Y) ->
+  IsElement = sets:is_element({X, Y}, Stones),
+  NewColor  = if IsElement -> 0;
+                 true      -> F
+  end,
+  [NewColor | fill_line(Fs, Stones, X, Y+1)].
 
 flood_find(Board, X, Y) ->
   Color =  at(Board, X, Y),
@@ -153,6 +182,16 @@ grav_board_test() ->
                                 [3,2,2,0,0],
                                 [3,4,3,3,0],
                                 [0,0,0,0,0]]).
+
+makemove_test() ->
+  B = example_board(),
+  {New, Score} = makemove(B, {1,0}),
+  ?assertEqual(New, [[1,0,0,0,0],
+                     [1,2,0,0,0],
+                     [3,2,2,0,0],
+                     [3,4,3,3,0],
+                     [0,0,0,0,0]]),
+  ?assertEqual(Score, 4).
 
 at_non_tuple_test() ->
   B = example_board(),
