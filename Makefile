@@ -30,7 +30,6 @@ PLTFILE     = erlking.plt
 all: $(BIN) doc
 
 run: $(BIN)
-	#$(ERLANG) -pa $(BEAMDIR) -eval 'application:ensure_all_started(erlking).' -noshell
 	@./$(BIN)
 
 repl: $(OBJFILES)
