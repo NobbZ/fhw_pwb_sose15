@@ -3,6 +3,7 @@
 .eunit
 doc/
 ebin/
+deps/
 erlking
 *.plt
 .global_plt.*
