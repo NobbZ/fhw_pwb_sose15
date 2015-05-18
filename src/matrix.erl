@@ -4,7 +4,7 @@
 %% Wikipedia article about matrixes</a> for further information.
 -module (matrix).
 
--export ([transpose/1, num_rows/1,
+-export ([transpose/1, num_rows/1, from_list/1,
           num_cols/1, matrix/3, at/3]).
 -export_type ([t/0]).
 
@@ -19,7 +19,9 @@
 -opaque t()       :: #matrix{width :: non_neg_integer(), height :: non_neg_integer(), payload :: array() | binary() }.
 -type generator() :: fun((non_neg_integer(), non_neg_integer()) -> any()).
 
--define (inbetween (V, Min, Max), (((Min) >= (V)) and ((V) =< (Max)))).
+-define (inbetween (V, Min, Max), (((Min) =< (V)) and ((V) =< (Max)))).
+-define (is_byte (V), ?inbetween(V, 16#00, 16#ff)).
+-define (else, true).
 
 % ==============================================================================
 % Retrieve information about the matrix
@@ -43,13 +45,58 @@ num_cols(M) ->
 % Builders
 % ==============================================================================
 
+-spec new(non_neg_integer(), non_neg_integer(), any()) -> t().
+new(Width, Height, Default) ->
+  List    = lists:duplicate(Width * Height, Default),
+  Payload = if is_integer(Default) and ?inbetween(Default, 16#00, 16#ff) ->
+    list_to_binary(List);
+  ?else ->
+    array:fix(array:from_list(List))
+  end,
+  #matrix{width = Width, height = Height, payload = Payload}.
+
+-spec from_list([[any()]]) -> t().
+from_list(List) ->
+  Width = lists:max(lists:map(fun(E) ->
+    lists:foldl(fun(_, Len) ->
+      1 + Len
+    end, 0, E)
+  end, List)),
+  Height = lists:foldl(fun(_, Len) -> 1 + Len end, 0, List),
+  FlatList = lists:concat(List),
+  AllInts = lists:all(fun is_integer/1, FlatList),
+  BinaryFits = if AllInts ->
+    lists:all(fun(X) -> ?is_byte(X) end, FlatList);
+  ?else ->
+    false
+  end,
+  Payload = if BinaryFits ->
+    list_to_binary(FlatList);
+  ?else ->
+    array:fix(array:from_list(FlatList))
+  end,
+  #matrix{width = Width, height = Height, payload = Payload}.
+
 %% @doc Generate a matrix from a generator function.
 -spec matrix(pos_integer(), pos_integer(), generator()) -> t().
-matrix(Rows, Cols, GenFun) ->
-  A = lists:sort(lists:flatten(lists:duplicate(Cols, lists:seq(0, Rows - 1)))),
-  B = lists:flatten(lists:duplicate(Rows, lists:seq(0, Cols - 1))),
+matrix(Width, Height, GenFun) ->
+  B = lists:sort(lists:flatten(lists:duplicate(Width, lists:seq(0, Height - 1)))),
+  A = lists:flatten(lists:duplicate(Height, lists:seq(0, Width - 1))),
   C = lists:zipwith(GenFun, A, B),
-  splice_list(C, Cols).
+  AllInts = lists:all(fun is_integer/1, C),
+  BinaryFits = if AllInts ->
+    lists:all(fun(X) -> ?is_byte(X) end, C);
+  ?else ->
+    false
+  end,
+  Payload = if BinaryFits ->
+    list_to_binary(C);
+  ?else ->
+    array:fix(array:from_list(C))
+  end,
+  #matrix{width = Width, height = Height, payload = Payload}.
+
+  %splice_list(C, Cols).
 
 -spec splice_list([any()], pos_integer()) -> t().
 splice_list(List, Cols) -> lists:reverse(splice_list(List, Cols, [])).
@@ -80,13 +127,17 @@ splice_list(List, Cols, Acc) ->
 %% '''
 -spec transpose(t()) -> t().
 transpose(#matrix{width = W, height = H} = FullM) ->
-  map(fun(X, Y) ->
+  matrix(H, W, fun(X, Y) ->
     at(FullM, Y, X)
-  end, new(H, W, 0)).
+  end).
 
 % transpose([[]|_]) -> [];
 % transpose(M) ->
 %   [lists:map(fun hd/1, M) | transpose(lists:map(fun tl/1, M))].
+
+-spec map_pos(generator(), t()) -> t().
+map_pos(GenFun, #matrix{width = W, height = H}) ->
+  matrix(H, W, GenFun).
 
 % ==============================================================================
 % Retrieve subvectors
@@ -112,9 +163,7 @@ transpose(#matrix{width = W, height = H} = FullM) ->
 at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
   binary:at(M, Y * W + X);
 at(#matrix{width = W, height = H, payload = M}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
-  array:get(Y * W + X, M);
-at(_, _, _) ->
-  badarg.
+  array:get(Y * W + X, M).
 % at(M, X, Y) ->
 %   V = lists:nth(Y + 1, M),
 %   lists:nth(X + 1, V).
@@ -133,28 +182,41 @@ num_cols_test() ->
   ?assertEqual(num_cols([[1,2,3],[4,5,6],[7,8,9]]), 3),
   ?assertEqual(num_cols([[1,2,3]]), 3).
 
+from_list_test() ->
+  List = [[1,2,3],[4,5,6],[7,8,9]],
+  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1,2,3,4,5,6,7,8,9>>},
+               from_list(List)).
+
 matrix_test() ->
-  ?assertEqual(matrix(3, 3, fun(X,Y) -> (X+1) * (Y+1) end), [[1,2,3],[2,4,6],[3,6,9]]).
+  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1,2,3,2,4,6,3,6,9>>},
+               matrix(3, 3, fun(X,Y) -> (X+1) * (Y+1) end)).
 
 transpose_1_x_m_test() ->
-  ?assertEqual(transpose([[1,2,3]]), [[1],[2],[3]]).
+  MOrig = from_list([[1,2,3]]),
+  MExp  = from_list([[1],[2],[3]]),
+  ?assertEqual(MExp, transpose(MOrig)).
+%  ?assertEqual(transpose([[1,2,3]]), [[1],[2],[3]]).
 
 transpose_n_x_1_test() ->
-  ?assertEqual(transpose([[1],[2],[3]]), [[1,2,3]]).
+  MOrig = from_list([[1],[2],[3]]),
+  MExp  = from_list([[1,2,3]]),
+  ?assertEqual(MExp, transpose(MOrig)).
 
 transpose_n_x_m_test() ->
-  ?assertEqual(transpose([[1,2,3],[4,5,6],[7,8,9]]), [[1,4,7],[2,5,8],[3,6,9]]).
+  MOrig = from_list([[1,2,3],[4,5,6],[7,8,9]]),
+  MExp  = from_list([[1,4,7],[2,5,8],[3,6,9]]),
+  ?assertEqual(MExp, transpose(MOrig)).
 
 transpose_transpose_is_id_test() ->
-  M = [[1,4,7],[2,5,8],[3,6,9]],
+  M = from_list([[1,4,7],[2,5,8],[3,6,9]]),
   ?assertEqual(transpose(transpose(M)), M).
 
-get_line_vector_test() ->
-  M = [[1,4,7],[2,5,8],[3,6,9]],
-  ?assertEqual(get_line_vector(M, 0), [1,4,7]).
+% get_line_vector_test() ->
+%   M = [[1,4,7],[2,5,8],[3,6,9]],
+%   ?assertEqual(get_line_vector(M, 0), [1,4,7]).
 
-get_column_vector_test() ->
-  M = [[1,4,7],[2,5,8],[3,6,9]],
-  ?assertEqual(get_column_vector(M, 0), [1,2,3]).
+% get_column_vector_test() ->
+%   M = [[1,4,7],[2,5,8],[3,6,9]],
+%   ?assertEqual(get_column_vector(M, 0), [1,2,3]).
 
 -endif.
