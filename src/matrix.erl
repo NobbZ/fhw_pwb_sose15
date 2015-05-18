@@ -4,17 +4,22 @@
 %% Wikipedia article about matrixes</a> for further information.
 -module (matrix).
 
--export ([transpose/1, get_line_vector/2, get_column_vector/2, num_rows/1,
+-export ([transpose/1, num_rows/1,
           num_cols/1, matrix/3, at/3]).
--export_type ([t/0, t/1]).
+-export_type ([t/0]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--type t()         :: t(any()).
--type t(A)        :: [[A]].
+-record (matrix, {width   = 0    :: non_neg_integer(),
+                  height  = 0    :: non_neg_integer(),
+                  payload = <<>> :: array() | binary()}).
+
+-opaque t()       :: #matrix{width :: non_neg_integer(), height :: non_neg_integer(), payload :: array() | binary() }.
 -type generator() :: fun((non_neg_integer(), non_neg_integer()) -> any()).
+
+-define (inbetween (V, Min, Max), (((Min) >= (V)) and ((V) =< (Max)))).
 
 % ==============================================================================
 % Retrieve information about the matrix
@@ -74,34 +79,45 @@ splice_list(List, Cols, Acc) ->
 %% [[1,2],[3,4]]
 %% '''
 -spec transpose(t()) -> t().
-transpose([[]|_]) -> [];
-transpose(M) ->
-  [lists:map(fun hd/1, M) | transpose(lists:map(fun tl/1, M))].
+transpose(#matrix{width = W, height = H} = FullM) ->
+  map(fun(X, Y) ->
+    at(FullM, Y, X)
+  end, new(H, W, 0)).
+
+% transpose([[]|_]) -> [];
+% transpose(M) ->
+%   [lists:map(fun hd/1, M) | transpose(lists:map(fun tl/1, M))].
 
 % ==============================================================================
 % Retrieve subvectors
 % ==============================================================================
 
-%% @doc Gets the specified line-vector.
-%% Counting starts with 0.
--spec get_line_vector(t(), non_neg_integer()) -> vector:t().
-get_line_vector(Matrix, Line) -> 
-  lists:nth(Line + 1, Matrix).
+% @doc Gets the specified line-vector.
+% Counting starts with 0.
+% -spec get_line_vector(t(), non_neg_integer()) -> vector:t().
+% get_line_vector(Matrix, Line) -> 
+%   lists:nth(Line + 1, Matrix).
 
-%% @doc Gets the specified column-vector.
-%% Counting starts with 0.
--spec get_column_vector(t(), non_neg_integer()) -> vector:t().
-get_column_vector(Matrix, Column) ->
-  get_line_vector(transpose(Matrix), Column).
+% %% @doc Gets the specified column-vector.
+% %% Counting starts with 0.
+% -spec get_column_vector(t(), non_neg_integer()) -> vector:t().
+% get_column_vector(Matrix, Column) ->
+%   get_line_vector(transpose(Matrix), Column).
 
 % ==============================================================================
 % Retrieve single elements
 % ==============================================================================
 
--spec at(t(A), non_neg_integer(), non_neg_integer()) -> A.
-at(M, X, Y) ->
-  V = lists:nth(Y + 1, M),
-  lists:nth(X + 1, V).
+-spec at(t(), non_neg_integer(), non_neg_integer()) -> any().
+at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
+  binary:at(M, Y * W + X);
+at(#matrix{width = W, height = H, payload = M}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
+  array:get(Y * W + X, M);
+at(_, _, _) ->
+  badarg.
+% at(M, X, Y) ->
+%   V = lists:nth(Y + 1, M),
+%   lists:nth(X + 1, V).
 
 % ==============================================================================
 % Tests
