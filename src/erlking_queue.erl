@@ -3,12 +3,12 @@
 
 % API
 -export ([start_link/0, get_job/0, add_job/1, get_info_to_terminal/0, compare_jobs/2,
-          result/2]).
+          result/2, handle_call/3]).
 
 % Exports for implementing behaviour 'gen_server'.
 -export ([code_change/3,
           handle_cast/2,
-          handle_call/3,
+          %handle_call/3,
           handle_info/2,
           init/1]).
 
@@ -25,7 +25,7 @@ add_job(Job) ->
   gen_server:cast(?MODULE, {add_job, Job}).
 
 result(Moves, Score) ->
-  gen_server:cast(?MODULE, {result, Moves, Score}).
+  gen_server:call(?MODULE, {result, Moves, Score}).
 
 get_info_to_terminal() ->
   gen_server:cast(?MODULE, print_info).
@@ -43,30 +43,43 @@ compare_jobs(J1, J2) -> % Fall back to default ordering if we didn't had a match
 
 init(_) ->
   EmptyQueue   = heaps:new(fun compare_jobs/2),
-  InitialQueue = heaps:add(EmptyQueue, read_board),
+  %InitialQueue = heaps:add(EmptyQueue, read_board),
   % io:format("InitialQueue: ~w~n", [heaps:peek(InitialQueue)]),
-  {ok, {0, InitialQueue}, infinity}.
+  erlking_pool:add_job(read_board),
+  {ok, 0, infinity}.
 
 code_change(_, _, _) ->
   {error, "No updates supported!"}.
 
-handle_call(get_job, _From, {MaxScore, JobQueue}) ->
-  IsAvailable = not heaps:is_empty(JobQueue),
-  if IsAvailable -> {Job, NewQueue} = heaps:fetch(JobQueue),
-                    % io:format("~w requested a job, serving ~w~n", [_From, Job]),
-                    Reply = {reply, Job, {MaxScore, NewQueue}};
-     true -> Reply = {reply, no_job, {MaxScore, JobQueue}}
-  end,
-  % io:format("I want to reply with the reply '~w'!~n", [Reply]),
-  Reply.
-  
-handle_cast({result, Moves, Score}, {MaxScore, JobQueue}) when Score > MaxScore ->
+% handle_call(get_job, _From, MaxScore) ->
+%   IsAvailable = not heaps:is_empty(JobQueue),
+%   if IsAvailable -> {Job, NewQueue} = heaps:fetch(JobQueue),
+%                     % io:format("~w requested a job, serving ~w~n", [_From, Job]),
+%                     Reply = {reply, Job, {MaxScore, NewQueue}};
+%      true -> Reply = {reply, no_job, {MaxScore, JobQueue}}
+%   end,
+%   % io:format("I want to reply with the reply '~w'!~n", [Reply]),
+%   Reply.
+
+handle_call({result, Moves, Score}, _From, MaxScore) when Score > MaxScore ->
+  %lager:info("New score of ~w emitted, old score was ~w, new history is ~w~n", [Score, MaxScore, Moves]),
+  lager:info("New Score: ~w: ", [Score]),
   emit_moves_to_stdout(lists:reverse(Moves)),
-  {noreply, {Score, JobQueue}};
-handle_cast({result, _, _}, State) -> {noreply, State};
-handle_cast({add_job, Job}, {MaxScore, JobQueue}) -> 
-  % io:format("Added job: ~w~n", [Job]),
-  {noreply, {MaxScore, heaps:add(JobQueue, Job)}}.
+  {reply, Score, Score};
+handle_call({result, _, Score}, _From, State) -> 
+  %lager:info("Dropping score of ~w, because previous ~w was better.~n", [Score, State]),
+  {reply, State, State}.
+  
+handle_cast({result, Moves, Score}, MaxScore) when Score > MaxScore ->
+  lager:info("New score of ~w emitted, old score was ~w, new history is ~w~n", [Score, MaxScore, Moves]),
+  emit_moves_to_stdout(lists:reverse(Moves)),
+  {noreply, Score};
+handle_cast({result, _, Score}, State) -> 
+  lager:info("Dropping score of ~w, because previous ~w was better.~n", [Score, State]),
+  {noreply, State}.
+% handle_cast({add_job, Job}, {MaxScore, JobQueue}) -> 
+%   % io:format("Added job: ~w~n", [Job]),
+%   {noreply, {MaxScore, heaps:add(JobQueue, Job)}}.
 
 handle_info(_, State) -> {noreply, State}.
 

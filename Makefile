@@ -9,6 +9,10 @@ ESCRPTCMD  = $(REBAR) escriptize
 TESTCMD    = $(REBAR) eunit
 REPLCMD    = $(REBAR) shell
 
+DEPSDIR = deps
+DEPS    = $(wildcard $(DEPSDIR)/*)
+DEPSBIN = $(DEPS:%=%/ebin)
+
 DIALYZER = dialyzer
 
 ERLANG  = erl
@@ -28,10 +32,15 @@ OTPPLTFILE  = .global_plt.$(OTPVERSION)
 PLTFILE     = erlking.plt
 
 
-all: $(BIN) doc
+#all: $(BIN) doc
+all:
+	@$(DEPSLVCMD)
+	@$(COMPILECMD)
+.PHONY: all
 
-run: $(BIN)
-	@./$(BIN)
+run:
+	$(ERLANG) -config erlking +A 5 -pa $(BEAMDIR) $(DEPSBIN:%=-pa %) -eval 'application:ensure_all_started(erlking).' -noshell
+	#@./$(BIN)
 
 repl: $(OBJFILES)
 	@$(REPLCMD)
@@ -54,7 +63,8 @@ name:
 
 clean:
 	@$(CLEANCMD)
-	rm -rf doc
+	@rm -rf doc log
+
 .PHONY: clean
 
 rebuild: clean all
@@ -63,16 +73,16 @@ rebuild: clean all
 $(BIN): $(OBJFILES)
 	@$(ESCRPTCMD)
 
-ebin/%.beam: $(SRCDIR)/%.erl rebar.config
-	@$(DEPSLVCMD)
-	@$(COMPILECMD)
+# ebin/%.beam: $(SRCDIR)/%.erl rebar.config
+# 	@$(DEPSLVCMD)
+# 	@$(COMPILECMD)
 
-ebin/%.app: $(SRCDIR)/%.app.src rebar.config
-	@$(DEPSLVCMD)
-	@$(COMPILECMD)
+# ebin/%.app: $(SRCDIR)/%.app.src rebar.config
+# 	@$(DEPSLVCMD)
+# 	@$(COMPILECMD)
 
-$(PLTFILE): $(OBJFILES)
-	@$(DIALYZER) --output_plt $@ --build_plt -r ebin
+$(PLTFILE): all
+	@$(DIALYZER) --output_plt $@ --build_plt -r ebin $(DEPSBIN:%=-r %)
 
 $(OTPPLTFILE):
 	@$(DIALYZER) --output_plt $@ --build_plt --apps edoc erts eunit kernel mnesia stdlib tools webtool xmerl
