@@ -4,8 +4,7 @@
 %% Wikipedia article about matrixes</a> for further information.
 -module (matrix).
 
--export ([transpose/1, num_rows/1, from_list/1,
-          num_cols/1, matrix/3, at/3]).
+-export ([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1]).
 -export_type ([t/0]).
 
 -ifdef (TEST).
@@ -28,18 +27,12 @@
 % ==============================================================================
 
 %% @doc Retrieves the number of rows in a given matrix.
--spec num_rows(t()) -> pos_integer().
-num_rows(M) ->
-  lists:foldl(fun(_, Len) -> 1 + Len end, 0, M).
+-spec get_height(t()) -> pos_integer().
+get_height(#matrix{height = H}) -> H.
 
 %% @doc Retrieves the mumber of columns in a given matrix.
--spec num_cols(t()) -> pos_integer().
-num_cols(M) ->
-  lists:max(lists:map(fun(E) ->
-    lists:foldl(fun(_, Len) ->
-      1 + Len
-    end, 0, E)
-  end, M)).
+-spec get_width(t()) -> pos_integer().
+get_width(#matrix{width = W}) -> W.
 
 % ==============================================================================
 % Builders
@@ -76,6 +69,19 @@ from_list(List) ->
     array:fix(array:from_list(FlatList))
   end,
   #matrix{width = Width, height = Height, payload = Payload}.
+
+-spec from_row_vecs([vector:t()]) -> t().
+from_row_vecs(Vs) when is_list(Vs) ->
+  from_row_vecs(Vs, #matrix{}).
+
+-spec from_row_vecs([vector:t()], t()) -> t().
+from_row_vecs([], M) -> M;
+from_row_vecs([V|Vs], #matrix{width = W, height = H, payload = <<M/binary>>}) ->
+  NewH = H + 1,
+  NewW = vector:get_size(V),
+  VBin = vector:to_binary(V),
+  NewM = <<M/binary, VBin/binary>>,
+  from_row_vecs(Vs, #matrix{width = NewW, height = NewH, payload = NewM}).
 
 %% @doc Generate a matrix from a generator function.
 -spec matrix(pos_integer(), pos_integer(), generator()) -> t().
@@ -143,6 +149,13 @@ map_pos(GenFun, #matrix{width = W, height = H}) ->
 % Retrieve subvectors
 % ==============================================================================
 
+-spec to_row_vecs(t()) -> [vector:t()].
+to_row_vecs(#matrix{width = W, height = H, payload = <<M/binary>>}) ->
+  RowIdxs = lists:seq(0, H - 1),
+  lists:map(fun(Row) ->
+    vector:from_binary(binary_part(M, W * Row, W))
+  end, RowIdxs).
+
 % @doc Gets the specified line-vector.
 % Counting starts with 0.
 % -spec get_line_vector(t(), non_neg_integer()) -> vector:t().
@@ -174,13 +187,17 @@ at(#matrix{width = W, height = H, payload = M}, X, Y) when ?inbetween(X, 0, (W -
 
 -ifdef (TEST).
 
-num_rows_test() ->
-  ?assertEqual(num_rows([[1,2,3],[4,5,6],[7,8,9]]), 3),
-  ?assertEqual(num_rows([[1,2,3]]), 1).
+get_width_test() ->
+  M1 = from_list([[1,2,3],[4,5,6],[7,8,9]]),
+  M2 = from_list([[1,2,3]]),
+  ?assertEqual(3, get_width(M1)),
+  ?assertEqual(3, get_width(M2)).
 
-num_cols_test() ->
-  ?assertEqual(num_cols([[1,2,3],[4,5,6],[7,8,9]]), 3),
-  ?assertEqual(num_cols([[1,2,3]]), 3).
+get_height_test() ->
+  M1 = from_list([[1,2,3],[4,5,6],[7,8,9]]),
+  M2 = from_list([[1,2,3]]),
+  ?assertEqual(3, get_height(M1)),
+  ?assertEqual(1, get_height(M2)).
 
 from_list_test() ->
   List = [[1,2,3],[4,5,6],[7,8,9]],
@@ -210,6 +227,13 @@ transpose_n_x_m_test() ->
 transpose_transpose_is_id_test() ->
   M = from_list([[1,4,7],[2,5,8],[3,6,9]]),
   ?assertEqual(transpose(transpose(M)), M).
+
+to_row_vecs_test() ->
+  M  = from_list([[1,2,3],[4,5,6],[7,8,9]]),
+  Vs = [vector:from_binary(<<1,2,3>>),
+        vector:from_binary(<<4,5,6>>),
+        vector:from_binary(<<7,8,9>>)],
+  ?assertEqual(Vs, to_row_vecs(M)).
 
 % get_line_vector_test() ->
 %   M = [[1,4,7],[2,5,8],[3,6,9]],
