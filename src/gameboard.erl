@@ -145,25 +145,25 @@ example_board() ->
   parse_board("[[0,2,2,0,3],[0,1,2,3,4],[0,0,1,2,3],[0,0,2,2,3],[0,0,0,0,0]]").
 
 parse_board_test() ->
-  ?assertEqual(parse_board("[[1,2,3]]"), [[1],[2],[3]]),
-  ?assertEqual(parse_board("[[1,2,3],[4,5,6],[7,8,9]]"), [[1,4,7],[2,5,8],[3,6,9]]).
+  ?assertEqual(parse_board("[[1,2,3]]"), matrix:from_list([[1],[2],[3]])),
+  ?assertEqual(parse_board("[[1,2,3],[4,5,6],[7,8,9]]"), matrix:from_list([[1,4,7],[2,5,8],[3,6,9]])).
 
 parse_board_with_whitespace_test() ->
-  ?assertEqual(parse_board("[[1, 2, 3]]"), [[1],[2],[3]]),
-  ?assertEqual(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"), [[1,4,7],[2,5,8],[3,6,9]]).
+  ?assertEqual(parse_board("[[1, 2, 3]]"), matrix:from_list([[1],[2],[3]])),
+  ?assertEqual(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"), matrix:from_list([[1,4,7],[2,5,8],[3,6,9]])).
 
 down_grav_test() ->
   B = example_board(),
-  ?assertEqual(B, [[0,0,0,0,0],
-                   [2,1,0,0,0],
-                   [2,2,1,2,0],
-                   [0,3,2,2,0],
-                   [3,4,3,3,0]]),
-  ?assertEqual(down_grav(B), [[0,0,0,0,0],
-                              [2,1,0,0,0],
-                              [2,2,1,2,0],
-                              [3,2,2,0,0],
-                              [3,4,3,3,0]]).
+  ?assertEqual(B, matrix:from_list([[0,0,0,0,0],
+                                    [2,1,0,0,0],
+                                    [2,2,1,2,0],
+                                    [0,3,2,2,0],
+                                    [3,4,3,3,0]])),
+  ?assertEqual(down_grav(B), matrix:from_list([[0,0,0,0,0],
+                                               [2,1,0,0,0],
+                                               [2,2,1,2,0],
+                                               [3,2,2,0,0],
+                                               [3,4,3,3,0]])).
 
 left_grav_test() ->
   B = example_board(),
