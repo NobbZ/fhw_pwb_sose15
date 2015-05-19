@@ -46,7 +46,7 @@ repl: $(OBJFILES)
 	@$(REPLCMD)
 .PHONY: repl
 
-test: $(OBJFILES)
+test: all
 	@$(TESTCMD)
 .PHONY: test
 
