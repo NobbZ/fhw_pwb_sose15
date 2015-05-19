@@ -18,7 +18,8 @@ parse_board(Board) ->
   {ok, Tokens, _}   = erl_scan:string(Board_Expr),
   {ok, [Form]}      = erl_parse:parse_exprs(Tokens),
   {value, Value, _} = erl_eval:expr(Form, []),
-  matrix:transpose(Value).
+  MatrixRep = matrix:from_list(Value),
+  matrix:transpose(MatrixRep).
 
 %% @doc Lets happen gravity on a board.
 -spec grav_board(t()) -> t().
