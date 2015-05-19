@@ -118,10 +118,18 @@ flood_find(Board, MX, MY, Color, [{_, _}|Stack], Acc) ->
   flood_find(Board, MX, MY, Color, Stack, Acc).
 
 down_grav(Board) ->
-  lists:map(fun(L) ->
-    {Front, Back} = lists:partition(fun(Field) -> Field /= 0 end, L),
-    Front ++ Back
-  end, Board).
+  Columns = matrix:to_row_vecs(Board),
+  NewColumns = lists:map(fun(Vec) ->
+    {Front, Back} = vector:partition(fun(F) -> F /= 0 end, Vec),
+    vector:concat(Front, Back)
+  end, Columns),
+  matrix:from_row_vecs(NewColumns).
+
+
+  % lists:map(fun(L) ->
+  %   {Front, Back} = lists:partition(fun(Field) -> Field /= 0 end, L),
+  %   Front ++ Back
+  % end, Board).
 
 left_grav(Board) ->
   {Front, Back} = lists:partition(fun(Col) -> lists:nth(1, Col) /= 0 end, Board),
