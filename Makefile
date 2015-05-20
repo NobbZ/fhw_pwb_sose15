@@ -86,3 +86,6 @@ $(PLTFILE): all
 
 $(OTPPLTFILE):
 	@$(DIALYZER) --output_plt $@ --build_plt --apps edoc erts eunit kernel mnesia stdlib tools webtool xmerl
+
+TAGS:	$(ERLFILES)
+	etags $(ERLFILES)
