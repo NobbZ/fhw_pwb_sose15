@@ -9,18 +9,22 @@
 %% Application callbacks
 %% ===================================================================
 
-start(_StartType, _StartArgs) ->
-  %wpool:start(),
+-spec start(StartType, StartArgs) -> Result when
+      StartType :: applicatio:start_type(),
+      StartArgs :: term(),
+      Result    :: {ok, pid()}
+                 | {ok, pid(), State}
+                 | {error, Reason},
+      Reason    :: term(),
+      State     :: term().
+start(normal, _StartArgs) ->
   wpool:start_sup_pool(erlking_pool, [{worker, {erlking_worker, []}},
-                                      {workers, 50}]),
-  wpool:start_sup_pool(erlking_low_pool, [{worker, {erlking_worker, []}},
-                                          {workers, 100}]),
+                                      {workers, 4}]),
+  % wpool:start_sup_pool(erlking_low_pool, [{worker, {erlking_worker, []}},
+  %                                         {workers, 100}]),
   erlking_sup:start_link().
- % go_background().
 
-stop(_State) ->
+-spec stop(term()) -> ok.
+stop(_) ->
     ok.
 
-% go_background() ->
-%   timer:sleep(10 * 1000),
-%   go_background().
