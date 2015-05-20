@@ -15,6 +15,13 @@
 %% API functions
 %% ===================================================================
 
+-spec start_link() -> Result when
+      Result :: {ok, pid()}
+              | ignore
+              | {error, Reason},
+      Reason :: {already_started, pid()}
+              | {shutdown, term()}
+              | term().
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -22,6 +29,14 @@ start_link() ->
 %% Supervisor callbacks
 %% ===================================================================
 
+-spec init(Args) -> Result when
+      Args            :: [],
+      Result          :: {ok, {{RestartStrategy, MaxR, MaxT}, [ChildSpec]}}
+                       | ignore,
+      RestartStrategy :: supervisor:strategy(),
+      MaxR            :: non_neg_integer(),
+      MaxT            :: pos_integer(),
+      ChildSpec       :: supervisor:child_spec().
 init([]) ->
   {ok, {{one_for_one, 5, 10}, [
     queue()
@@ -30,14 +45,3 @@ init([]) ->
 queue() ->
   {erlking_queue, {erlking_queue,  start_link, []}, permanent, 5000, worker, [erlking_queue]}.
 
-old_init([]) ->
-  Cores   = erlang:system_info(logical_processors_available),
-  ListOfNames = lists:map(fun(A) ->
-    list_to_atom(lists:flatten(io_lib:format("worker~w", [A])))
-  end, lists:seq(1, 50 * Cores)),
-  Workers = lists:map(fun(Label) ->
-    {Label, {erlking_worker, start_link, []}, permanent, 5000, worker, [erlking_worker]}
-  end, ListOfNames),
-  Queue   = {queue_server, {erlking_queue,  start_link, []}, permanent, 5000, worker, [erlking_queue]},
-  ProcessList = [Queue | Workers],
-  {ok, { {one_for_one, 5, 10}, ProcessList} }.
