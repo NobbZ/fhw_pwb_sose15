@@ -18,11 +18,18 @@
       Reason    :: term(),
       State     :: term().
 start(normal, _StartArgs) ->
-  wpool:start_sup_pool(erlking_pool, [{worker, {erlking_worker, []}},
-                                      {workers, 4}]),
-  % wpool:start_sup_pool(erlking_low_pool, [{worker, {erlking_worker, []}},
-  %                                         {workers, 100}]),
-  erlking_sup:start_link().
+    Cores = case erlang:system_info(logical_processors_available) of
+                unknown       -> 1;
+                C when C =< 0 -> 1;
+                C             -> C
+            end,
+    wpool:start_sup_pool(erlking_low, [{worker, {erlking_worker, []}},
+                                       {workers, 8 * Cores}]),
+    wpool:start_sup_pool(erlking_mid, [{worker, {erlking_worker, []}},
+                                       {workers, 4 * Cores}]),
+    wpool:start_sup_pool(erlking_hi,  [{worker, {erlking_worker, []}},
+                                       {workers, 2 * Cores}]),
+    erlking_sup:start_link().
 
 -spec stop(term()) -> ok.
 stop(_) ->
