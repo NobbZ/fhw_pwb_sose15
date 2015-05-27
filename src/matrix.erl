@@ -1,4 +1,6 @@
-%% @doc
+%% @doc Provides facilities to work with matrixes.
+%%
+%% @todo Currently there is only support for matrixes of bytes!.
 %% @author Norbert Melzer <inf100760@fh-wedel.de>
 %% @reference See <a href="http://en.wikipedia.org/wiki/Matrix_(mathematics)">
 %% Wikipedia article about matrixes</a> for further information.
@@ -7,18 +9,22 @@
 -export ([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1,
           to_column_vecs/1, from_column_vecs/1, get_height/1, get_width/1,
           map_pos/2, new/3]).
--export_type ([t/0]).
+-export_type ([t/0, generator/0, dim/0]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--record (matrix, {width   = 0    :: non_neg_integer(),
-                  height  = 0    :: non_neg_integer(),
+-record (matrix, {width   = 0    :: dim(),
+                  height  = 0    :: dim(),
                   payload = <<>> :: binary()}).
 
--opaque t()       :: #matrix{width :: non_neg_integer(), height :: non_neg_integer(), payload :: binary() }.
+-opaque t()       :: #matrix{width   :: dim(),
+                             height  :: dim(), 
+                             payload :: binary() }.
+-type dim()       :: non_neg_integer().
 -type generator() :: fun((non_neg_integer(), non_neg_integer()) -> any()).
+
 
 -define (inbetween (V, Min, Max), (((Min) =< (V)) and ((V) =< (Max)))).
 -define (is_byte (V), ?inbetween(V, 16#00, 16#ff)).
@@ -29,24 +35,31 @@
 % ==============================================================================
 
 %% @doc Retrieves the number of rows in a given matrix.
--spec get_height(t()) -> pos_integer().
+-spec get_height(M :: t()) -> dim().
 get_height(#matrix{height = H}) -> H.
 
 %% @doc Retrieves the mumber of columns in a given matrix.
--spec get_width(t()) -> pos_integer().
+-spec get_width(M1 :: t()) -> dim().
 get_width(#matrix{width = W}) -> W.
 
 % ==============================================================================
 % Builders
 % ==============================================================================
 
--spec new(non_neg_integer(), non_neg_integer(), any()) -> t().
+%% @doc Creates a new matrix with given dimension filled with value `Default'.
+-spec new(Width   :: dim(), 
+          Height  :: dim(),
+          Default :: byte()) -> t().
 new(Width, Height, Default) ->
   List    = lists:duplicate(Width * Height, Default),
   Payload = list_to_binary(List),
   #matrix{width = Width, height = Height, payload = Payload}.
 
--spec from_list([[any()]]) -> t().
+%% @doc Creates a matrix from a list of lists.
+%%
+%% @todo When the inner lists are of different lengths, then the resulting 
+%% matrix will be malformed!
+-spec from_list([[byte()]]) -> t().
 from_list(List) ->
   Width = lists:max(lists:map(fun(E) ->
     lists:foldl(fun(_, Len) ->
@@ -58,15 +71,25 @@ from_list(List) ->
   Payload = list_to_binary(FlatList),
   #matrix{width = Width, height = Height, payload = Payload}.
 
--spec from_column_vecs([vector:t()]) -> t().
-from_column_vecs(M) ->
-  transpose(from_row_vecs(M)).
+%% @doc Creates a new matrix from a list of `vector's.
+%%
+%% Each `vector' in the list represents a column of the matrix.
+%% They have to be from left to right.
+-spec from_column_vecs(Columns :: [vector:t()]) -> t().
+from_column_vecs(Vs) ->
+  transpose(from_row_vecs(Vs)).
 
--spec from_row_vecs([vector:t()]) -> t().
+%% @doc Creates a new matrix from a list of `vector's.
+%%
+%% Each `vector' in the list represents a row of the matrix.
+%% They have to be from top to bottom.
+-spec from_row_vecs(Rows :: [vector:t()]) -> t().
 from_row_vecs(Vs) when is_list(Vs) ->
   from_row_vecs(Vs, #matrix{}).
 
--spec from_row_vecs([vector:t()], t()) -> t().
+%% @doc Builds a new matrix from a list of `vector's.
+-spec from_row_vecs(Vs  :: [vector:t()],
+                    Acc :: t()) -> t().
 from_row_vecs([], M) -> M;
 from_row_vecs([V|Vs], #matrix{height = H, payload = <<M/binary>>}) ->
   NewH = H + 1,
@@ -76,7 +99,9 @@ from_row_vecs([V|Vs], #matrix{height = H, payload = <<M/binary>>}) ->
   from_row_vecs(Vs, #matrix{width = NewW, height = NewH, payload = NewM}).
 
 %% @doc Generate a matrix from a generator function.
--spec matrix(pos_integer(), pos_integer(), generator()) -> t().
+-spec matrix(Width  :: dim(),
+             Height :: dim(),
+             GenFun :: generator()) -> t().
 matrix(Width, Height, GenFun) ->
   B = lists:sort(lists:flatten(lists:duplicate(Width, lists:seq(0, Height - 1)))),
   A = lists:flatten(lists:duplicate(Height, lists:seq(0, Width - 1))),
@@ -102,15 +127,11 @@ matrix(Width, Height, GenFun) ->
 %% >>> transpose(transpose(M))
 %% [[1,2],[3,4]]
 %% '''
--spec transpose(t()) -> t().
+-spec transpose(M :: t()) -> t().
 transpose(#matrix{width = W, height = H} = FullM) ->
   matrix(H, W, fun(X, Y) ->
     at(FullM, Y, X)
   end).
-
-% transpose([[]|_]) -> [];
-% transpose(M) ->
-%   [lists:map(fun hd/1, M) | transpose(lists:map(fun tl/1, M))].
 
 -spec map_pos(generator(), t()) -> t().
 map_pos(GenFun, #matrix{width = W, height = H}) ->
