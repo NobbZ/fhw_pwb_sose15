@@ -18,6 +18,9 @@ DIALYZER = dialyzer
 ERLANG  = erl
 BEAMDIR = ebin
 
+SYSTHREADS  = 10
+NODENAME    = $(NAME)
+
 SRCDIR      = src
 ERLFILES    = $(wildcard $(SRCDIR)/*.erl)
 BEAMFILES   = $(ERLFILES:$(SRCDIR)/%.erl=$(BEAMDIR)/%.beam)
@@ -27,20 +30,24 @@ APPFILES    = $(APPSRCFILES:$(SRCDIR)/%.src=$(BEAMDIR)/%)
 OBJFILES    = $(APPFILES) $(BEAMFILES)
 BIN         = $(NAME)
 
+CLASSPATHS  = $(BEAMDIR) $(DEPSBIN)
+
+APPSTART    = application:ensure_all_started(erlking).
+
+ERLRUNOPTS  = -sname $(NODENAME) -config $(NAME) +A $(SYSTHREADS) $(CLASSPATHS:%=-pa %) -noshell
+
 OTPVERSION  = $(shell erl -noshell -eval 'io:format(erlang:system_info(otp_release)), halt().')
 OTPPLTFILE  = .global_plt.$(OTPVERSION)
 PLTFILE     = erlking.plt
 
-
 #all: $(BIN) doc
-all:
+all: $(REBAR) doc
 	@$(DEPSLVCMD)
 	@$(COMPILECMD)
 .PHONY: all
 
 run:
-	$(ERLANG) -sname $(NAME) -config erlking +A 5 -pa $(BEAMDIR) $(DEPSBIN:%=-pa %) -eval 'application:ensure_all_started(erlking).' -noshell
-	#@./$(BIN)
+	@$(ERLANG) $(ERLRUNOPTS) -eval '$(APPSTART)'
 
 repl: $(OBJFILES)
 	@$(REPLCMD)
@@ -89,3 +96,10 @@ $(OTPPLTFILE):
 
 TAGS:	$(ERLFILES)
 	etags $(ERLFILES)
+
+$(REBAR): rebar-src
+	cd rebar-src && ./bootstrap
+	cp rebar-src/rebar $(REBAR)
+
+rebar-src:
+	git clone https://github.com/rebar/rebar.git $@
