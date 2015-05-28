@@ -177,7 +177,11 @@ to_column_vecs(M) ->
 
 -spec at(t(), non_neg_integer(), non_neg_integer()) -> any().
 at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
-  binary:at(M, Y * W + X).
+    binary:at(M, Y * W + X);
+at(#matrix{width = W, height = H} = M, X, Y) ->
+    Trace = try throw(42) catch 42 -> erlang:get_stacktrace() end,
+    lager:error("~p accessed with ~p, ~p; Trace: ~p", [M, X, Y, Trace]),
+    erlang:display(Trace).
 
 % ==============================================================================
 % Tests
