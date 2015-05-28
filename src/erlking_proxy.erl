@@ -24,9 +24,11 @@
 ask_for_job(Proxy) ->
     gen_fsm:send_event(Proxy, ask_for_job).
 
-compare(#job{potential = P1}, #job{potential = P2}) ->
-    if P1 >  P2 -> lt;
-       true     -> gt
+compare(#job{potential = P1, lastscore = LS1}, #job{potential = P2, lastscore = LS2}) ->
+    Pot1 = P1*P1+LS1,
+    Pot2 = P2*P2+LS2,
+    if Pot1 > Pot2 -> lt;
+       true        -> gt
     end.
 
 start_link() ->
@@ -58,7 +60,7 @@ collecting({add_job, Job}, #state{heap = Heap} = State) ->
     %%                 false -> collecting
     %%             end,
     NextState = case erlang:memory(processes_used) >= ?MAX_MEM_USE of
-                    true  -> dropping;
+                    true  -> lager:info("switched to dropping"), dropping;
                     false -> collecting
                 end,
     {next_state, NextState, State#state{heap = Heap1}}.
@@ -71,7 +73,7 @@ dropping(ask_for_job, #state{worker = Worker, heap = Heap} = State) ->
     %%                 false -> dropping
     %%             end,
     NextState = case erlang:memory(processes_used) =< ?MIN_MEM_USE of
-                    true  -> collecting;
+                    true  -> lager:info("switched to collecting"), collecting;
                     false -> dropping
                 end,
     {next_state, NextState, State#state{heap = Heap1}};
@@ -86,7 +88,7 @@ dropping({add_job, Job}, #state{heap = Heap} = State) ->
     %%                 false -> dropping
     %%             end,
     NextState = case erlang:memory(processes_used) =< ?MIN_MEM_USE of
-                    true  -> collecting;
+                    true  -> lager:info("switched to collecting"), collecting;
                     false -> dropping
                 end,
     {next_state, NextState, State#state{heap = Heap1}}.
