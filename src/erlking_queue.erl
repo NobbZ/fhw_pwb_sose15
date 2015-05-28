@@ -2,7 +2,7 @@
 -behaviour (gen_server).
 
                                                 % API
--export ([start_link/0, result/2]).
+-export ([start_link/0, result/2, result2/2]).
 
                                                 % Exports for implementing behaviour 'gen_server'.
 -export ([code_change/3, handle_call/3, handle_cast/2, handle_info/2, init/1,
@@ -20,19 +20,23 @@
       Error  :: {already_started, Pid}
               | term().
 start_link() ->
+    lager:info("Starting ~p", [?MODULE]),
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 -spec result([term()], non_neg_integer()) -> non_neg_integer().
 result(Moves, Score) ->
     gen_server:call(?MODULE, {result, Moves, Score}).
 
+result2(History, Score) ->
+    gen_server:call(?MODULE, {result2, History, Score}).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec init(term()) -> {ok, 0, infinity}.
 init(_) ->
-    erlking_pool:add_job(read_board),
-    {ok, 0, infinity}.
+    %% erlking_pool:add_job(read_board),
+    {ok, -4294836225, infinity}.
 
 -spec code_change(term(), term(), term()) -> {error, term()}.
 code_change(_, _, _) ->
@@ -45,7 +49,11 @@ handle_call({result, Moves, Score}, _From, MaxScore) when Score > MaxScore ->
     lager:info("New Score: ~w: ", [Score]),
     emit_moves_to_stdout(lists:reverse(Moves)),
     ?return(Score);
-handle_call({result, _, _}, _From, State) -> 
+handle_call({result2, History, Score}, _From, MaxScore) when Score > MaxScore ->
+    lager:info("New Score: ~p", [Score]),
+    emit_history(lists:reverse(History)),
+    ?return(Score);
+handle_call(_, _From, State) -> 
     ?return(State).
 
 -spec handle_cast(term(), non_neg_integer()) -> {noreply, non_neg_integer()}.
@@ -65,6 +73,17 @@ terminate(_ ,_) ->
 emit_moves_to_stdout(Moves) ->
     MoveString = move_string(Moves),
     io:format("[~s]~n", [MoveString]).
+
+emit_history(History) ->
+    MoveString = move_string2(History),
+    io:format("[~s]~n", [MoveString]).
+
+move_string2([]) ->
+    "";
+move_string2([{X, Y}]) ->
+    io_lib:format("(~p, ~p)", [X, Y]);
+move_string2([{X, Y}|Tail]) ->
+    lists:concat([io_lib:format("(~p, ~p), ", [X, Y]), move_string2(Tail)]).
 
 move_string([]) ->
     "";
