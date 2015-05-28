@@ -38,14 +38,14 @@ new(Compare) -> #prioq{compare = Compare}.
 
 %% @doc Adds an element `E' to the priority queue `Q'.
 -spec add(t(), any()) -> t().
-add(_Q = #prioq{heap = Heap, size = N, compare = Compare}, E) ->
-  #prioq{heap = meld(Heap, {E, []}, Compare), size = N+1}.
+add(Q = #prioq{heap = Heap, size = N, compare = Compare}, E) ->
+  Q#prioq{heap = meld(Heap, {E, []}, Compare), size = N+1}.
 
 size(#prioq{size = N}) -> N.
 
 -spec drop(t()) -> t().
-drop(_Q = #prioq{heap = {_, Sub}, size = N, compare = Compare}) ->
-  #prioq{heap = pair(Sub, Compare), size = N-1}.
+drop(Q = #prioq{heap = {_, Sub}, size = N, compare = Compare}) ->
+  Q#prioq{heap = pair(Sub, Compare), size = N-1}.
 
 -spec from_list(list()) -> t().
 from_list(L) ->
@@ -82,7 +82,7 @@ meld(Q, nil, _Compare) -> Q;
 meld(Left = {X, SubLeft}, Right = {Y, SubRight}, Compare) ->
   case Compare(X, Y) of
     lt ->
-      {X, [Right|SubLeft ]};
+          {X, [Right|SubLeft ]};
     _ ->
       {Y, [Left |SubRight]}
   end.
