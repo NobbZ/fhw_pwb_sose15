@@ -25,12 +25,6 @@ start(normal, _StartArgs) ->
             C when C =< 0 -> 1;
             C -> C
           end,
-  %% wpool:start_sup_pool(erlking_low, [{worker, {erlking_worker, []}},
-  %%                                    {workers, 8 * Cores}]),
-  %% wpool:start_sup_pool(erlking_mid, [{worker, {erlking_worker, []}},
-  %%                                    {workers, 4 * Cores}]),
-  %% wpool:start_sup_pool(erlking_hi,  [{worker, {erlking_worker, []}},
-  %%                                    {workers, 2 * Cores}]),
   ets:new(jobstore, [set, public, named_table,
     %% compressed,
     {keypos, 1}]),
