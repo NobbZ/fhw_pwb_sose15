@@ -19,7 +19,7 @@ loop(#state{proxy = Proxy, lastscore = Last} = State) ->
                {Jobs, Score, Hist} = process_job(Job),
                NewLast = tell_score(Score, Hist, Last),
                lists:map(fun(#job{} = FunJob) ->
-                 erlking_pool:add_job(FunJob)
+                 ek_pool:add_job(FunJob)
                end, Jobs),
                State#state{lastscore = NewLast}
            after 10 -> State
