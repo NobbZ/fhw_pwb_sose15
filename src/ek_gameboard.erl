@@ -3,7 +3,7 @@
 %% @author Norbert Melzer <inf100760@fh-wedel.de>
 %% @reference read more about <a href="http://en.wikipedia.org/wiki/SameGame">
 %%   samegame</a>.
--module(gameboard).
+-module(ek_gameboard).
 
 -export([parse_board/1, grav_board/1, at/2, at/3, flood_find/3,
   find_clickables/1, makemove/2, endgame/1, inc_key/2]).
@@ -146,7 +146,7 @@ fill(Board, Stones) ->
   F = fun(MX, MY) ->
     case sets:is_element({MX, MY}, Stones) of
       true -> 0;
-      false -> gameboard:at(Board, MX, MY)
+      false -> ek_gameboard:at(Board, MX, MY)
     end
   end,
   matrix:transpose(matrix:map_pos(F, Board)).

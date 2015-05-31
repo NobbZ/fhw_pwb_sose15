@@ -26,8 +26,8 @@ ask_for_job(Proxy) ->
 
 compare(#job{potential = P1, lastscore = LS1, whitespace = WS1, board = B1, click = {X1, Y1}},
         #job{potential = P2, lastscore = LS2, whitespace = WS2, board = B2, click = {X2, Y2}}) ->
-  Per1 = ets:lookup_element(colorstore, gameboard:at(B1, X1, Y1), 2),
-  Per2 = ets:lookup_element(colorstore, gameboard:at(B2, X2, Y2), 2),
+  Per1 = ets:lookup_element(colorstore, ek_gameboard:at(B1, X1, Y1), 2),
+  Per2 = ets:lookup_element(colorstore, ek_gameboard:at(B2, X2, Y2), 2),
   %Pot1 = WS1 * WS1 - (P1 * P1 / (Per1 * Per1)) + LS1,
   %Pot2 = WS2 * WS2 - (P2 * P2 / (Per2 * Per2)) + LS2,
   %%Pot1 = (WS1 * WS1 + (P1 * P1) + LS1) * (Per1 * Per1),
