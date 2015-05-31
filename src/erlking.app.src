@@ -1,14 +1,14 @@
 {application, erlking,
- [
-  {description, ""},
-  {vsn, "0.0.1"},
-  {registered, []},
-  {applications, [
-                  kernel,
-                  stdlib,
-                  worker_pool,
-                  lager
-                 ]},
-  {mod, { erlking_app, []}},
-  {env, []}
- ]}.
+  [
+    {description, ""},
+    {vsn, "0.0.1"},
+    {registered, []},
+    {applications, [
+      kernel,
+      stdlib,
+      worker_pool,
+      lager
+    ]},
+    {mod, {erlking_app, []}},
+    {env, []}
+  ]}.

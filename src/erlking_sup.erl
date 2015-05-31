@@ -16,32 +16,32 @@
 %% ===================================================================
 
 -spec start_link() -> Result when
-      Result :: {ok, pid()}
-              | ignore
-              | {error, Reason},
-      Reason :: {already_started, pid()}
-              | {shutdown, term()}
-              | term().
+  Result :: {ok, pid()}
+  | ignore
+  | {error, Reason},
+  Reason :: {already_started, pid()}
+  | {shutdown, term()}
+  | term().
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
 
 -spec init(Args) -> Result when
-      Args            :: [],
-      Result          :: {ok, {{RestartStrategy, MaxR, MaxT}, [ChildSpec]}}
-                       | ignore,
-      RestartStrategy :: supervisor:strategy(),
-      MaxR            :: non_neg_integer(),
-      MaxT            :: pos_integer(),
-      ChildSpec       :: supervisor:child_spec().
+  Args :: [],
+  Result :: {ok, {{RestartStrategy, MaxR, MaxT}, [ChildSpec]}}
+  | ignore,
+  RestartStrategy :: supervisor:strategy(),
+  MaxR :: non_neg_integer(),
+  MaxT :: pos_integer(),
+  ChildSpec :: supervisor:child_spec().
 init([]) ->
   {ok, {{one_for_one, 5, 10}, [
     queue()
   ]}}.
 
 queue() ->
-  {erlking_queue, {erlking_queue,  start_link, []}, permanent, 5000, worker, [erlking_queue]}.
+  {erlking_queue, {erlking_queue, start_link, []}, permanent, 5000, worker, [erlking_queue]}.
 
