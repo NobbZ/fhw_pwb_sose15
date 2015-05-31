@@ -28,7 +28,7 @@ loop(#state{proxy = Proxy, lastscore = Last} = State) ->
 
 tell_score(Score, History, LastScore) ->
   case Score > LastScore of
-    true -> erlking_queue:result2(History, Score);
+    true -> erlking_queue:result(History, Score);
     false -> LastScore
   end.
 
