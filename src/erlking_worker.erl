@@ -13,7 +13,7 @@ start_link(Proxy) ->
   loop(State).
 
 loop(#state{proxy = Proxy, lastscore = Last} = State) ->
-  erlking_proxy:ask_for_job(Proxy),
+  ek_proxy:ask_for_job(Proxy),
   State1 = receive
              Job ->
                {Jobs, Score, Hist} = process_job(Job),

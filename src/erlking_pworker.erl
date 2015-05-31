@@ -11,7 +11,7 @@ start_link() ->
 
 init([]) ->
   lager:info("init of pworker ~w", [self()]),
-  {ok, ProxyPid} = erlking_proxy:start_link(),
+  {ok, ProxyPid} = ek_proxy:start_link(),
   {ok, ProxyPid}.
 
 handle_cast(Msg, ProxyPid) ->

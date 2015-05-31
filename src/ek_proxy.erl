@@ -1,4 +1,4 @@
--module(erlking_proxy).
+-module(ek_proxy).
 
 -behaviour(gen_fsm).
 
