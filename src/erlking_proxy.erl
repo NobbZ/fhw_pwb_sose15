@@ -47,7 +47,7 @@ start_link() ->
 
 init([]) ->
   lager:info("init of proxy ~w", [self()]),
-  Worker = spawn_link(erlking_worker2, start_link, [self()]),
+  Worker = spawn_link(erlking_worker, start_link, [self()]),
   lager:info("proxy ~w has started worker ~w", [self(), Worker]),
   State = #state{worker = Worker, heap = heaps:new(fun compare/2)},
   lager:info("proxy ~w enters state of collecting with state ~p",

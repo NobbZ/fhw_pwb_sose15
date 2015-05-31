@@ -1,4 +1,4 @@
--module(erlking_worker2).
+-module(erlking_worker).
 
 -export([start_link/1]).
 
