@@ -1,4 +1,4 @@
--module(erlking_queue).
+-module(ek_queue).
 -behaviour(gen_server).
 
 % API
