@@ -63,7 +63,7 @@ read_board_from_stdin_and_send_it_as_job() ->
       whitespace = Whitespace}
   end, Moves),
   lists:map(fun(Job) ->
-    erlking_pool:add_job2(Job)
+    erlking_pool:add_job(Job)
   end, Jobs).
 
 countwhite(Board) ->

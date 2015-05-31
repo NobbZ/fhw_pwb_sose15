@@ -1,6 +1,6 @@
 -module(erlking_pool).
 
--export([add_job2/1]).
+-export([add_job/1]).
 
 -define (STRATEGY, best_worker).
 % -define (STRATEGY, random_worker).
@@ -19,5 +19,5 @@
 %lager:info("~w has ~w messages waiting.~n", [self(), erlang:process_info(self(), messages_queue_len)]),
 %wpool:cast(erlking_low, Job, ?STRATEGY).
 
-add_job2(Job) ->
+add_job(Job) ->
   wpool:cast(erlking_test, {add_job, Job}, ?STRATEGY).
