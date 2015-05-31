@@ -1,4 +1,4 @@
--module(erlking_pworker).
+-module(ek_pworker).
 
 -behaviour(gen_server).
 
