@@ -30,7 +30,7 @@ start(normal, _StartArgs) ->
     {keypos, 1}]),
   ets:new(colorstore, [set, public, {keypos, 1}, named_table]),
   wpool:start_sup_pool(erlking_test, [{worker, {ek_pworker, []}},
-    {workers, 2 * Cores}]),
+    {workers, 1 * Cores}]),
   ek_supervisor:start_link(),
   timer:sleep(100),
   read_board_from_stdin_and_send_it_as_job(),
