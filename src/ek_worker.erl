@@ -13,8 +13,10 @@ start_link(Proxy) ->
   loop(State).
 
 loop(#state{proxy = Proxy, lastscore = Last} = State) ->
-  ek_proxy:ask_for_job(Proxy),
+  ek_proxy:ask_for_job(Proxy, self()),
   State1 = receive
+             no_job ->
+               State;
              Job ->
                {Jobs, Score, Hist} = process_job(Job),
                NewLast = tell_score(Score, Hist, Last),
@@ -22,7 +24,6 @@ loop(#state{proxy = Proxy, lastscore = Last} = State) ->
                  ek_pool:add_job(FunJob)
                end, Jobs),
                State#state{lastscore = NewLast}
-           after 10 -> State
            end,
   loop(State1).
 
