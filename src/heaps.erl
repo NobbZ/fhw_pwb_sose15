@@ -1,6 +1,6 @@
 -module(heaps).
 -export([new/0, new/1, add/2, drop/1, from_list/1, from_list/2, is_empty/1,
-  fetch/1, peek/1, to_list/1, size/1]).
+         fetch/1, peek/1, to_list/1, size/1]).
 
 -export_type([compare/0, t/0, size/0]).
 
@@ -12,10 +12,8 @@
 -type size() :: non_neg_integer().
 
 -record(prioq, {heap = nil :: nil | tuple(),
-  size = 0 :: size(),
-  compare = fun def_compare/2 :: compare()
-}
-).
+                size = 0 :: size(),
+                compare = fun def_compare/2 :: compare()}).
 
 -opaque t() :: #prioq{}.
 
@@ -61,11 +59,11 @@ from_list(L, Compare) ->
 -spec to_list(t()) -> list().
 to_list(#prioq{heap = nil, size = 0}) -> [];
 to_list(Q) ->
-  [peek(Q) | to_list(drop(Q))].
+  [peek(Q)|to_list(drop(Q))].
 
 -spec is_empty(t()) -> boolean().
 is_empty(#prioq{heap = nil, size = 0}) -> true;
-is_empty(_) -> false.
+is_empty(_)                            -> false.
 
 -spec fetch(t()) -> {any(), t()}.
 fetch(#prioq{size = 0} = Q) ->
@@ -87,14 +85,14 @@ meld(Q, nil, _Compare) -> Q;
 meld(Left = {X, SubLeft}, Right = {Y, SubRight}, Compare) ->
   case Compare(X, Y) of
     lt ->
-      {X, [Right | SubLeft]};
+      {X, [Right|SubLeft]};
     _ ->
-      {Y, [Left | SubRight]}
+      {Y, [Left|SubRight]}
   end.
 
-pair([], _Compare) -> nil;
+pair([], _Compare)  -> nil;
 pair([Q], _Compare) -> Q;
-pair([Q0, Q1 | Qs], Compare) ->
+pair([Q0, Q1|Qs], Compare) ->
   Q2 = meld(Q0, Q1, Compare),
   meld(Q2, pair(Qs, Compare), Compare).
 
