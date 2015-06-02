@@ -41,7 +41,7 @@ process_job(#job{potential  = Pot,
                  whitespace = WS}) ->
   Board = ets:lookup_element(jobstore, BoardHash, 2),
   {NewBoard, JobScore} = ek_gameboard:makemove(Board, Click),
-  NewBoardHash = erlang:phash2(NewBoard),
+  NewBoardHash = erlang:now(),
   ets:insert(jobstore, {NewBoardHash, NewBoard}),
   InterScore = Last + JobScore,
   NewHistory = [Click|History],

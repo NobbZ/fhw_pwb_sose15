@@ -46,7 +46,7 @@ stop(_) ->
 read_board_from_stdin_and_send_it_as_job() ->
   BoardString = io:get_line(""),
   BoardMtrx = ek_gameboard:parse_board(BoardString),
-  BoardHash = erlang:phash2(BoardMtrx),
+  BoardHash = erlang:now(),
   ets:insert(jobstore, {BoardHash, BoardMtrx}),
   Moves = ek_gameboard:find_clickables(BoardMtrx),
   Whitespace = countwhite(BoardMtrx),
