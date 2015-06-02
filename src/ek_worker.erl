@@ -40,6 +40,8 @@ process_job(#job{potential = Pot,
   lastscore = Last,
   whitespace = WS}) ->
   {NewBoard, JobScore} = ek_gameboard:makemove(Board, Click),
+  NewBoardHash = erlang:now(),
+  ets:insert(jobstore, {NewBoardHash, NewBoard}),
   InterScore = Last + JobScore,
   NewHistory = [Click | History],
   Moves = ek_gameboard:find_clickables(NewBoard),

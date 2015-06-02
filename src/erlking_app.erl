@@ -46,7 +46,7 @@ stop(_) ->
 read_board_from_stdin_and_send_it_as_job() ->
   BoardString = io:get_line(""),
   BoardMtrx = ek_gameboard:parse_board(BoardString),
-  ek_sml_lrg_first:run_board(BoardMtrx, [], {0,0}, 0, true).
+  ek_sml_lrg_first:run_board(BoardMtrx, [], none, 0, true).
 
 %read_board_from_stdin_and_send_it_as_job() ->
 %  BoardString = io:get_line(""),
