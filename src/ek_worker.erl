@@ -34,11 +34,12 @@ tell_score(Score, History, LastScore) ->
   end.
 
 process_job(#job{potential = Pot,
-  board = Board,
+  board = BoardHash,
   click = Click,
   history = History,
   lastscore = Last,
   whitespace = WS}) ->
+  Board = ets:lookup_element(jobstore, BoardHash, 2),
   {NewBoard, JobScore} = ek_gameboard:makemove(Board, Click),
   NewBoardHash = erlang:now(),
   ets:insert(jobstore, {NewBoardHash, NewBoard}),
@@ -51,11 +52,17 @@ process_job(#job{potential = Pot,
   EndScore = InterScore + ek_gameboard:endgame(NewBoard),
   Jobs = lists:map(fun({ThisClick, P}) ->
     #job{potential = P,
-      board = NewBoard,
+      board = NewBoardHash,
       click = ThisClick,
       history = NewHistory,
       lastscore = InterScore,
       %%lastscore = EndScore,
       whitespace = WS + Pot}
   end, Moves),
-  {Jobs, EndScore, NewHistory}.
+  JobsHeap = heaps:from_list(Jobs, fun ek_proxy:compare/2),
+  JobList = take(5, heaps:to_list(JobsHeap)),
+  {JobList, EndScore, NewHistory}.
+
+take(0, _) -> [];
+take(_, []) -> [];
+take(N, [X|Xs]) -> [X|take(N-1, Xs)].
