@@ -6,7 +6,7 @@
 -module(ek_gameboard).
 
 -export([parse_board/1, grav_board/1, at/2, at/3, flood_find/3,
-  find_clickables/1, makemove/2, endgame/1, inc_key/2]).
+         find_clickables/1, makemove/2, endgame/1, inc_key/2]).
 
 -export_type([t/0, point/0]).
 
@@ -67,33 +67,33 @@ makemove(Board, {X, Y}) ->
 -spec find_clickables(t()) -> [{non_neg_integer(), non_neg_integer()}].
 find_clickables(Board) ->
   find_clickables(Board,
-    0, 0,
-    matrix:get_height(Board), matrix:get_width(Board),
-    [], sets:new()).
+                  0, 0,
+                  matrix:get_height(Board), matrix:get_width(Board),
+                  [], sets:new()).
 
 %% @doc Finds one sample-coordinate for every larger group of stones.
 -ifdef(OLD_STYLE_TYPES).
 -spec find_clickables(Board :: t(),
-    X :: non_neg_integer(),
-    Y :: non_neg_integer(),
-    MaxX :: non_neg_integer(),
-    MaxY :: non_neg_integer(),
-    Acc :: [{{non_neg_integer(), non_neg_integer()},
-      non_neg_integer()}],
-    Checked :: set()) ->
-  [{{non_neg_integer(), non_neg_integer()},
-    non_neg_integer()}].
+                      X :: non_neg_integer(),
+                      Y :: non_neg_integer(),
+                      MaxX :: non_neg_integer(),
+                      MaxY :: non_neg_integer(),
+                      Acc :: [{{non_neg_integer(), non_neg_integer()},
+                               non_neg_integer()}],
+                      Checked :: set()) ->
+                       [{{non_neg_integer(), non_neg_integer()},
+                         non_neg_integer()}].
 -else
 -spec find_clickables(Board :: t(),
-    X :: non_neg_integer(),
-    Y :: non_neg_integer(),
-    MaxX :: non_neg_integer(),
-    MaxY :: non_neg_integer(),
-    Acc :: [{{non_neg_integer(), non_neg_integer()},
-      non_neg_integer()}],
-    Checked :: sets:set(point())) ->
-  [{{non_neg_integer(), non_neg_integer()},
-    non_neg_integer()}].
+                      X :: non_neg_integer(),
+                      Y :: non_neg_integer(),
+                      MaxX :: non_neg_integer(),
+                      MaxY :: non_neg_integer(),
+                      Acc :: [{{non_neg_integer(), non_neg_integer()},
+                               non_neg_integer()}],
+                      Checked :: sets:set(point())) ->
+                       [{{non_neg_integer(), non_neg_integer()},
+                         non_neg_integer()}].
 -endif.
 find_clickables(_Board, _, MY, _, MY, Acc, _) -> Acc;
 find_clickables(Board, MX, Y, MX, MY, Acc, Checked) ->
@@ -105,11 +105,11 @@ find_clickables(Board, X, Y, MX, MY, Acc, Checked) when (X < MX) and (Y < MY) ->
       NewChecked = sets:union(Checked, FieldsSet),
       SetSize = sets:size(FieldsSet),
       NewAcc = case SetSize >= 2 of
-                 true ->
-                   [{{X, Y}, SetSize} | Acc];
-                 false ->
-                   Acc
-               end,
+        true ->
+          [{{X, Y}, SetSize}|Acc];
+        false ->
+          Acc
+      end,
       find_clickables(Board, X + 1, Y, MX, MY, NewAcc, NewChecked);
     true ->
       NewAcc = Acc,
@@ -118,18 +118,18 @@ find_clickables(Board, X, Y, MX, MY, Acc, Checked) when (X < MX) and (Y < MY) ->
   end.
 
 -spec flood_fill(Board :: t(),
-    X :: non_neg_integer(),
-    Y :: non_neg_integer()) ->
-  t().
+                 X :: non_neg_integer(),
+                 Y :: non_neg_integer()) ->
+                  t().
 flood_fill(Board, X, Y) ->
   Color = at(Board, X, Y),
   if Color /= 0 ->
     FieldsSet = flood_find(Board,
-      matrix:get_height(Board),
-      matrix:get_width(Board),
-      Color,
-      [{X, Y}],
-      sets:new()),
+                           matrix:get_height(Board),
+                           matrix:get_width(Board),
+                           Color,
+                           [{X, Y}],
+                           sets:new()),
     StonesAffected = sets:size(FieldsSet),
     Score = (StonesAffected - 1) * (StonesAffected - 1),
     TemporaryBoard = fill(Board, FieldsSet), %, 0, 0),
@@ -140,8 +140,8 @@ flood_fill(Board, X, Y) ->
   end.
 
 -spec fill(Board :: t(),
-    Stones :: [{non_neg_integer(), non_neg_integer()}]) ->
-  t().
+           Stones :: [{non_neg_integer(), non_neg_integer()}]) ->
+            t().
 fill(Board, Stones) ->
   F = fun(MX, MY) ->
     case sets:is_element({MX, MY}, Stones) of
@@ -156,26 +156,28 @@ flood_find(Board, X, Y) ->
   Color = at(Board, X, Y),
   if
     Color /= 0 ->
-      flood_find(Board, matrix:get_height(Board), matrix:get_width(Board), Color, [{X, Y}], sets:new());
+      flood_find(Board, matrix:get_height(Board), matrix:get_width(Board),
+                 Color, [{X, Y}], sets:new());
     true ->
       sets:new()
   end.
 
 flood_find(_, _, _, _, [], Acc) -> Acc;
-flood_find(Board, MX, MY, Color, [{X, Y} | Stack], Acc) when (X >= 0) and (Y >= 0) and (X < MX) and (Y < MY) ->
+flood_find(Board, MX, MY, Color, [{X, Y}|Stack], Acc) when
+  (X >= 0) and (Y >= 0) and (X < MX) and (Y < MY) ->
   CurColor = at(Board, X, Y),
   Checked = sets:is_element({X, Y}, Acc),
   {NewAcc, NewStack} = if (CurColor == Color) and not Checked ->
     {sets:add_element({X, Y}, Acc),
-      [{X + 1, Y},
-        {X - 1, Y},
-        {X, Y + 1},
-        {X, Y - 1} | Stack]};
-                         true ->
-                           {Acc, Stack}
-                       end,
+     [{X + 1, Y},
+      {X - 1, Y},
+      {X, Y + 1},
+      {X, Y - 1}|Stack]};
+    true ->
+      {Acc, Stack}
+  end,
   flood_find(Board, MX, MY, Color, NewStack, NewAcc);
-flood_find(Board, MX, MY, Color, [{_, _} | Stack], Acc) ->
+flood_find(Board, MX, MY, Color, [{_, _}|Stack], Acc) ->
   flood_find(Board, MX, MY, Color, Stack, Acc).
 
 down_grav(Board) ->
@@ -183,13 +185,14 @@ down_grav(Board) ->
   NewColumns = lists:map(fun(Vec) ->
     {Front, Back} = vector:partition(fun(F) -> F /= 0 end, Vec),
     vector:concat(Front, Back)
-  end, Columns),
+                         end, Columns),
   matrix:from_row_vecs(NewColumns).
 
 -spec endgame(t()) -> integer().
 endgame(B) ->
   V0 = matrix:to_row_vecs(B),
-  V1 = lists:foldl(fun(V, Acc) -> vector:concat(Acc, V) end, vector:from_binary(<<>>), V0),
+  V1 = lists:foldl(fun(V, Acc) -> vector:concat(Acc, V) end,
+                   vector:from_binary(<<>>), V0),
   List = binary_to_list(vector:to_binary(V1)),
   Stones = lists:foldl(fun(E, Store) -> inc_key(E, Store) end, [], List),
   Stones1 = lists:keydelete(0, 1, Stones),
@@ -197,9 +200,9 @@ endgame(B) ->
 
 inc_key(Key, Store) ->
   Val = case lists:keysearch(Key, 1, Store) of
-          {value, {_, V}} -> V;
-          false -> 0
-        end,
+    {value, {_, V}} -> V;
+    false -> 0
+  end,
   lists:keystore(Key, 1, Store, {Key, Val + 1}).
 
 % lists:map(fun(L) ->
@@ -216,7 +219,7 @@ left_grav(Board) ->
       _ ->
         true
     end
-  end, Rows),
+                                  end, Rows),
   matrix:from_row_vecs(Front ++ Back).
 
 % {Front, Back} = lists:partition(fun(Col) -> lists:nth(1, Col) /= 0 end, Board),
@@ -240,54 +243,56 @@ example_board() ->
 
 parse_board_test() ->
   ?assertEqual(parse_board("[[1,2,3]]"), matrix:from_list([[1], [2], [3]])),
-  ?assertEqual(parse_board("[[1,2,3],[4,5,6],[7,8,9]]"), matrix:from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]])).
+  ?assertEqual(parse_board("[[1,2,3],[4,5,6],[7,8,9]]"),
+               matrix:from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]])).
 
 parse_board_with_whitespace_test() ->
   ?assertEqual(parse_board("[[1, 2, 3]]"), matrix:from_list([[1], [2], [3]])),
-  ?assertEqual(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"), matrix:from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]])).
+  ?assertEqual(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"),
+               matrix:from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]])).
 
 down_grav_test() ->
   B = example_board(),
   ?assertEqual(down_grav(B), matrix:from_list([[0, 0, 0, 0, 0],
-    [2, 1, 0, 0, 0],
-    [2, 2, 1, 2, 0],
-    [3, 2, 2, 0, 0],
-    [3, 4, 3, 3, 0]])).
+                                               [2, 1, 0, 0, 0],
+                                               [2, 2, 1, 2, 0],
+                                               [3, 2, 2, 0, 0],
+                                               [3, 4, 3, 3, 0]])).
 
 left_grav_test() ->
   B = example_board(),
   B2 = down_grav(B),
   ?assertEqual(left_grav(B2), matrix:from_list([[2, 1, 0, 0, 0],
-    [2, 2, 1, 2, 0],
-    [3, 2, 2, 0, 0],
-    [3, 4, 3, 3, 0],
-    [0, 0, 0, 0, 0]])).
+                                                [2, 2, 1, 2, 0],
+                                                [3, 2, 2, 0, 0],
+                                                [3, 4, 3, 3, 0],
+                                                [0, 0, 0, 0, 0]])).
 
 grav_board_test() ->
   B = example_board(),
   ?assertEqual(grav_board(B), matrix:from_list([[2, 1, 0, 0, 0],
-    [2, 2, 1, 2, 0],
-    [3, 2, 2, 0, 0],
-    [3, 4, 3, 3, 0],
-    [0, 0, 0, 0, 0]])).
+                                                [2, 2, 1, 2, 0],
+                                                [3, 2, 2, 0, 0],
+                                                [3, 4, 3, 3, 0],
+                                                [0, 0, 0, 0, 0]])).
 
 makemove_test() ->
   B = example_board(),
   {New, Score} = makemove(B, {1, 0}),
   ?assertEqual(New, matrix:from_list([[1, 0, 0, 0, 0],
-    [1, 2, 0, 0, 0],
-    [3, 2, 2, 0, 0],
-    [3, 4, 3, 3, 0],
-    [0, 0, 0, 0, 0]])),
+                                      [1, 2, 0, 0, 0],
+                                      [3, 2, 2, 0, 0],
+                                      [3, 4, 3, 3, 0],
+                                      [0, 0, 0, 0, 0]])),
   ?assertEqual(Score, 4).
 
 makemove_bug_test() ->
   B = parse_board("[[1,2,3],[1,2,3],[1,2,3]]"),
   ?assertEqual({matrix, 3, 3, <<1, 1, 1, 2, 2, 2, 3, 3, 3>>},
-    B),
+               B),
   {B2, _} = makemove(B, {2, 0}),
   ?assertEqual({matrix, 3, 3, <<1, 1, 1, 2, 2, 2, 0, 0, 0>>},
-    B2).
+               B2).
 
 at_non_tuple_test() ->
   B = example_board(),
@@ -316,8 +321,8 @@ find_clickables_bug_test() ->
   B = parse_board("[[1,2,0],[1,2,0],[1,2,0]]"),
   List = find_clickables(B),
   ?assertEqual([{{1, 0}, 3},
-    {{0, 0}, 3}],
-    List).
+                {{0, 0}, 3}],
+               List).
 
 find_clickables_moved_test() ->
   B = example_board(),
