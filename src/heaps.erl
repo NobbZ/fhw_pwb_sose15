@@ -1,6 +1,6 @@
 -module(heaps).
 -export([new/0, new/1, add/2, drop/1, from_list/1, from_list/2, is_empty/1,
-         fetch/1, peek/1, to_list/1, size/1]).
+         fetch/1, peek/1, to_list/1, size/1, sort/1, sort/2]).
 
 -export_type([compare/0, t/0, size/0]).
 
@@ -29,7 +29,7 @@ def_compare(E1, E2) ->
 new() -> #prioq{}.
 
 %% @doc Create an empty priorityqueue with a given `Compare'-function.
-%% 
+%%
 %% The `Compare'-function needs to return `lt' when `E1' is lesser than `E2`,
 %% `eq' on equality, and `gt' otherwise.
 -spec new(compare()) -> t().
@@ -75,7 +75,12 @@ fetch(Q) ->
 peek(_Q = #prioq{heap = {X, _}}) ->
   X.
 
+sort(List) ->
+  sort(List, fun def_compare/2).
 
+sort(List, Compare) ->
+  Heap = from_list(List, Compare),
+  to_list(Heap).
 
 
 
