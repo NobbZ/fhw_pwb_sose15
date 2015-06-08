@@ -11,7 +11,7 @@
 
 %% API
 -export([new/3, add_possible_hits/3, possible_hits/2, hit_checked/3,
-         restore_board/2, set_initial/2, get_initial/1]).
+         restore_board/2, set_initial/2, get_initial/1, make_click/3]).
 
 -define(LIMIT, 50000).
 
@@ -32,7 +32,7 @@ new(Colors, Cols, Rows) ->
                                           public,
                                           named_table,
                                           {keypos, 1},
-                                          {heir, none}])
+                                          {heir, none}]),
   #history{color_count              = Colors,
            col_count                = Cols,
            row_count                = Rows,
@@ -49,7 +49,8 @@ get_initial(#history{} = Self) ->
 
 add_possible_hits(#history{} = Self, Board, PossibleHits)
   when is_list(PossibleHits) ->
-  add_possible_hits(Self, Board, array:fix(array:from_list(PossibleHits)));
+  PreparedHits = lists:map(fun(X) -> {X, nil} end, PossibleHits),
+  add_possible_hits(Self, Board, array:fix(array:from_list(PreparedHits)));
 add_possible_hits(#history{} = Self, Board, PossibleHits) ->
   BoardHash = ek_gameboard:hash(Board),
   ets:insert(Self#history.history_of_possible_hits,
@@ -73,3 +74,23 @@ restore_board(#history{} = Self, BoardHash) ->
   [{_, Board, _}] = ets:lookup(Self#history.history_of_possible_hits,
                                BoardHash),
   Board.
+
+make_click(#history{} = Self, Board, HitIdx) when not is_integer(Board) ->
+  case ek_gameboard:is_gameboard(Board) of
+    true -> make_click(Self, ek_gameboard:hash(Board), HitIdx);
+    false -> error(badarg)
+  end;
+make_click(#history{} = Self, Board, HitIdx) when is_integer(Board) ->
+  [{_, BoardMtrx, Hits}] = ets:lookup(Self#history.history_of_possible_hits,
+                                      Board),
+  Hit = array:get(HitIdx, Hits),
+  case Hit of
+    {{Coord, _}, nil} ->
+      {NextBrd, ThisScore} = ek_gameboard:makemove(BoardMtrx, Coord),
+      PossMoves = ek_gameboard:find_clickables(NextBrd),
+      NextHash = ek_gameboard:hash(NextBrd),
+      add_possible_hits(Self, NextBrd, PossMoves),
+      {ThisScore, NextHash};
+    {{_, Stones}, NextHash} ->
+      {(Stones - 1) * (Stones - 1), NextHash}
+  end.
