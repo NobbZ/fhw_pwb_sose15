@@ -39,9 +39,9 @@ start_link() ->
   ChildSpec :: supervisor:child_spec().
 init([]) ->
   {ok, {{one_for_one, 5, 10}, [
-    queue()
+    result()
   ]}}.
 
-queue() ->
-  {ek_queue, {ek_queue, start_link, []}, permanent, 5000, worker, [ek_queue]}.
+result() ->
+  ?CHILD(ek_result, worker).
 
