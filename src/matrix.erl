@@ -8,7 +8,7 @@
 
 -export([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1,
          to_column_vecs/1, from_column_vecs/1, get_height/1, get_width/1,
-         map_pos/2, new/3, hash/1]).
+         map_pos/2, new/3, hash/1, is_matrix/1]).
 -export_type([t/0, generator/0, dim/0]).
 
 -ifdef (TEST).
@@ -41,6 +41,9 @@ get_height(#matrix{height = H}) -> H.
 %% @doc Retrieves the mumber of columns in a given matrix.
 -spec get_width(M1 :: t()) -> dim().
 get_width(#matrix{width = W}) -> W.
+
+is_matrix(#matrix{}) -> true;
+is_matrix(_) -> false.
 
 % ==============================================================================
 % Builders

@@ -5,8 +5,8 @@
 %%   samegame</a>.
 -module(ek_gameboard).
 
--export([parse_board/1, grav_board/1, at/2, at/3, flood_find/3,
-         find_clickables/1, makemove/2, endgame/1, inc_key/2]).
+-export([parse_board/1, grav_board/1, at/2, at/3, flood_find/3, is_gameboard/1,
+         find_clickables/1, makemove/2, endgame/1, inc_key/2, hash/1]).
 
 -export_type([t/0, point/0]).
 
@@ -224,6 +224,12 @@ left_grav(Board) ->
 
 % {Front, Back} = lists:partition(fun(Col) -> lists:nth(1, Col) /= 0 end, Board),
 % Front ++ Back.
+
+is_gameboard(Subject) ->
+  matrix:is_matrix(Subject).
+
+hash(Board) ->
+  matrix:hash(Board).
 
 % ==============================================================================
 % Tests
