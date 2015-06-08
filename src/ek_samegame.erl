@@ -45,17 +45,15 @@ fitness_of(#samegame{} = Self, #individual{} = I) ->
   Start = ek_history:get_initial(Self#samegame.history),
   IdxList = lists:seq(1, length(I#individual.g)),
   GwithIdx = lists:zip(I#individual.g, IdxList),
-  {NewI, _} = lists:foldl(fun iterate_g/2, {I, Self}, GwithIdx),
+  {NewI, _, _} = lists:foldl(fun iterate_g/2, {I, Self, false}, GwithIdx),
   NewI.
 
-iterate_g({HitIdx, Idx}, {#individual{} = I, #samegame{} = SG}) ->
-  {I2, SG2} = case ek_history:possible_hits(SG#samegame.history, SG#samegame.board) of
-    nil ->
-      PossibleHits = ek_gameboard:find_clickables(SG#samegame.board),
-      ek_history:add_possible_hits(SG#samegame.history, SG#samegame.board, PossibleHits),
-      Ia = case PossibleHits of
-        0 -> I#individual{max_hit_idx = Idx};
-        _ -> I
-      end,
+iterate_g({_, _}, {#individual{}, #samegame{}, true} = Res) -> Res;
+iterate_g({HitIdx, Idx}, {#individual{} = I, #samegame{} = SG, false}) ->
+  {Score, Next} = ek_history:make_click(SG#samegame.history, SG#samegame.board,
+    HitIdx),
+  NewI   = I#individual{f = I#individual.f + Score},
+  NewSG  = SG#samegame{board = Next},
+  Finished = Score == 0,
+  {NewI, NewSG, Finished}.
 
-  end
