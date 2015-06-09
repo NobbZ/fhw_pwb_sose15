@@ -27,7 +27,8 @@ new(Cols, Rows) ->
   new(?POPULATION, Cols, Rows).
 
 new(PopCount, Cols, Rows) ->
-  F = fun(_) -> ek_individual:new(Cols * Rows / 2) end,
+  F = fun(_) -> ek_individual:new(Cols * Rows div 2) end,
+  random:seed(now()),
   #population{population  = PopCount,
               individuals = lists:map(F, lists:seq(1, PopCount))}.
 
