@@ -50,7 +50,10 @@ best_individual(#population{individuals = Is}) ->
   heaps:peek(Heap).
 
 calculate_fitness(#population{} = Pop, SameGame) ->
-  F = fun(I) -> calculate_fitness(I, SameGame) end,
+  %%io:format("Asking for score~n"),
+  Score = ek_result:get_score(),
+  %%io:format("Current max score is ~p~n", [Score]),
+  F = fun(I) -> calculate_fitness(I#individual{f = 0, max_hit_idx = 0}, SameGame, Score) end,
   NewIs = lists:map(F, Pop#population.individuals),
   Pop#population{individuals = NewIs};
 calculate_fitness(#individual{} = I, SameGame) ->
