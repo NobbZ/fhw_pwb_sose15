@@ -34,7 +34,7 @@ new(PopCount, Cols, Rows) ->
 
 comp_f(I1, I2) ->
   if
-    I1#individual.f < I2#individual.f -> lt;
+    I1#individual.f > I2#individual.f -> lt;
     I1#individual.f == I2#individual.f -> eq;
     true -> gt
   end.
