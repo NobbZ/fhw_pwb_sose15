@@ -55,9 +55,8 @@ calculate_fitness(#population{} = Pop, SameGame) ->
   %%io:format("Current max score is ~p~n", [Score]),
   F = fun(I) -> calculate_fitness(I#individual{f = 0, max_hit_idx = 0}, SameGame, Score) end,
   NewIs = lists:map(F, Pop#population.individuals),
-  Pop#population{individuals = NewIs};
-calculate_fitness(#individual{} = I, SameGame) ->
-  ek_samegame:fitness_of(SameGame, I).
+  %%NewIs = ek_list_helpers:pmap(F, Pop#population.individuals),
+  Pop#population{individuals = NewIs}.
 
 next_generation(#population{} = Pop) ->
   RecombinedPop = recombine(Pop),
