@@ -46,6 +46,7 @@ handle_cast(Request, State) ->
 handle_call({report, Score, History}, _, #state{} = S) ->
   Reply = case Score > S#state.score of
     true ->
+      io:format("Score: ~p: ", [Score]),
       print_history(History),
       Score;
     false -> S#state.score
@@ -84,7 +85,7 @@ print_history(History) ->
 
 really_print_history(History) ->
   HistoryString = format_history(History),
-  io:format("~p", [HistoryString]).
+  io:format("[~s]~n", [HistoryString]).
 
 format_history([]) ->
   "";
