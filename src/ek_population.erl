@@ -74,7 +74,7 @@ recombine(#population{} = Pop) ->
   RightParts = shuffle_list(Pop#population.individuals),
   Pairs = lists:zip(Pop#population.individuals, RightParts),
   CrossBreeds = lists:map(F, Pairs),
-  Pop#population{population = CrossBreeds}.
+  Pop#population{individuals = CrossBreeds}.
 
 
 mutate(#population{} = Pop) ->
