@@ -42,8 +42,8 @@ stop(_) ->
 
 read_board_from_stdin_and_send_it_as_job() ->
   BoardString = io:get_line(""),
-  BoardMtrx = gameboard:parse_board(BoardString),
-  Moves = gameboard:find_clickables(BoardMtrx),
+  BoardMtrx = ek_gameboard:parse_board(BoardString),
+  Moves = ek_gameboard:find_clickables(BoardMtrx),
   %% Einmal die Penalty berechnen und in Zukunft nur noch gegen rechnen!
   %%Penalty = gameboard:endgame(BoardMtrx),
   Whitespace = countwhite(BoardMtrx),
@@ -71,7 +71,7 @@ get_color_percentages(Board) ->
   Vs = matrix:to_row_vecs(Board),
   V = lists:foldl(fun(Vec, Acc) -> vector:concat(Acc, Vec) end, vector:from_binary(<<>>), Vs),
   List = binary_to_list(vector:to_binary(V)),
-  Stones = lists:foldl(fun(E, Store) -> gameboard:inc_key(E, Store) end, [], List),
+  Stones = lists:foldl(fun(E, Store) -> ek_gameboard:inc_key(E, Store) end, [], List),
   Stones1 = lists:keydelete(0, 1, Stones),
   Size = matrix:get_height(Board) * matrix:get_width(Board),
   lists:keymap(fun(Val) -> Val / Size end, 2, Stones1).

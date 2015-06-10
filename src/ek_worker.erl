@@ -38,14 +38,14 @@ process_job(#job{potential = Pot,
   history = History,
   lastscore = Last,
   whitespace = WS}) ->
-  {NewBoard, JobScore} = gameboard:makemove(Board, Click),
+  {NewBoard, JobScore} = ek_gameboard:makemove(Board, Click),
   InterScore = Last + JobScore,
   NewHistory = [Click | History],
-  Moves = gameboard:find_clickables(NewBoard),
+  Moves = ek_gameboard:find_clickables(NewBoard),
   %% In der Theorie sinkt die Penalty jedesmal um den Betrag des letzten Klicks
   %% EndScore = InterScore + JobScore, %% InterScore + gameboard:endgame(NewBoard),
   %% Aber das funktioniert doch nicht :( Muss ich weiter überlegen wie ich mir das einsparen kann
-  EndScore = InterScore + gameboard:endgame(NewBoard),
+  EndScore = InterScore + ek_gameboard:endgame(NewBoard),
   Jobs = lists:map(fun({ThisClick, P}) ->
     #job{potential = P,
       board = NewBoard,
