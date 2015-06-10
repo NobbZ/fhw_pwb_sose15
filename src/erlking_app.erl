@@ -30,6 +30,7 @@ start(normal, _StartArgs) ->
   ek_supervisor:start_link(),
   timer:sleep(100),
   read_board_from_stdin_and_send_it_as_job(),
+  ek_proxy:run(),
   {ok, self()}.
 
 number_of_cores() ->
@@ -43,28 +44,30 @@ number_of_cores() ->
 stop(_) ->
   ok.
 
-read_board_from_stdin_and_send_it_as_job() ->
-  BoardString = io:get_line(""),
-  BoardMtrx = ek_gameboard:parse_board(BoardString),
-  ek_sml_lrg_first:run_board(BoardMtrx, [], {0,0}, 0, true).
-
 %read_board_from_stdin_and_send_it_as_job() ->
 %  BoardString = io:get_line(""),
 %  BoardMtrx = ek_gameboard:parse_board(BoardString),
-%  Moves = ek_gameboard:find_clickables(BoardMtrx),
-%  Whitespace = countwhite(BoardMtrx),
-%  ColorPercentages = get_color_percentages(BoardMtrx),
-%  ets:insert(colorstore, ColorPercentages),
-%  Jobs = lists:map(fun({ThisClick, Pot}) ->
-%    #job{potential = Pot,
-%      board = BoardMtrx,
-%      click = ThisClick,
-%      %%lastscore  = Penalty,
-%      whitespace = Whitespace}
-%  end, Moves),
-%  lists:map(fun(Job) ->
-%    ek_pool:add_job(Job)
-%  end, Jobs).
+%  ek_sml_lrg_first:run_board(BoardMtrx, [], none, 0).
+
+read_board_from_stdin_and_send_it_as_job() ->
+  BoardString = io:get_line(""),
+  BoardMtrx = ek_gameboard:parse_board(BoardString),
+  BoardHash = erlang:now(),
+  ets:insert(jobstore, {BoardHash, BoardMtrx}),
+  Moves = ek_gameboard:find_clickables(BoardMtrx),
+  Whitespace = countwhite(BoardMtrx),
+  ColorPercentages = get_color_percentages(BoardMtrx),
+  ets:insert(colorstore, ColorPercentages),
+  Jobs = lists:map(fun({ThisClick, Pot}) ->
+    #job{potential = Pot,
+      board = BoardHash,
+      click = ThisClick,
+      %%lastscore  = Penalty,
+      whitespace = Whitespace}
+  end, Moves),
+  lists:map(fun(Job) ->
+    ek_pool:add_job(Job)
+  end, Jobs).
 
 countwhite(Board) ->
   Vs = matrix:to_row_vecs(Board),

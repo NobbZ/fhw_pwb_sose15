@@ -8,7 +8,7 @@
 -export([init/1, collecting/2, dropping/2, waiting/2]).
 
 %%% api
--export([start_link/0, ask_for_job/2, run/0]).
+-export([start_link/0, ask_for_job/2, run/0, compare/2]).
 
 -export_types([]).
 
@@ -20,24 +20,28 @@
 -define(MAX_MEM_USE, 1024 * 1024 * 1024 * 3).
 -define(MIN_MEM_USE, (round(?MAX_MEM_USE * 0.9))).
 
--define(NUM_WORKERS, 4).
+-define(NUM_WORKERS, 3).
 
 ask_for_job(Proxy, Pid) ->
   gen_fsm:send_event(Proxy, {ask_for_job, Pid}).
 
 compare(#job{potential = P1, lastscore = LS1, whitespace = WS1, board = B1, click = {X1, Y1}},
         #job{potential = P2, lastscore = LS2, whitespace = WS2, board = B2, click = {X2, Y2}}) ->
-  Per1 = ets:lookup_element(colorstore, ek_gameboard:at(B1, X1, Y1), 2),
-  Per2 = ets:lookup_element(colorstore, ek_gameboard:at(B2, X2, Y2), 2),
-  Pot1 = WS1 * WS1 + P1 * P1 + LS1,
-  Pot2 = WS2 * WS2 + P2 * P2 + LS2,
+  %Per1 = ets:lookup_element(colorstore, ek_gameboard:at(B1, X1, Y1), 2),
+  %Per2 = ets:lookup_element(colorstore, ek_gameboard:at(B2, X2, Y2), 2),
+  Brd1 = ets:lookup_element(jobstore, B1, 2),
+  Brd2 = ets:lookup_element(jobstore, B2, 2),
+  %Pen1 = ek_gameboard:endgame(Brd1),
+  %Pen2 = ek_gameboard:endgame(Brd2),
+  Pot1 = WS1 * WS1 + P1 * P1 * P1 + LS1,
+  Pot2 = WS2 * WS2 + P2 * P2 * P2 + LS2,
   %Pot1 = WS1 * WS1 - (P1 * P1 / (Per1 * Per1)) + LS1,
   %Pot2 = WS2 * WS2 - (P2 * P2 / (Per2 * Per2)) + LS2,
   %%Pot1 = (WS1 * WS1 + (P1 * P1) + LS1) * (Per1 * Per1),
   %%Pot2 = (WS2 * WS2 + (P2 * P2) + LS2) * (Per2 * Per2),
   %Pot1 = (WS1 * WS1 * WS1 * WS1) - ((P1 * P1 * P1) + LS1),% * (Per1 * Per1),
   %Pot2 = (WS2 * WS2 * WS2 * WS2) - ((P2 * P2 * P2) + LS2),% * (Per2 * Per2),
-  Size = matrix:get_height(B1) * matrix:get_width(B1),
+  %Size = matrix:get_height(B1) * matrix:get_width(B1),
   %Pot1 = (math:pow(WS1 * WS1 * WS1 * WS1, 1 / Per1) + LS1 + math:pow(P1 * P1, 1 / Per1)),
   %Pot2 = (math:pow(WS2 * WS1 * WS2 * WS2, 1 / Per2) + LS2 + math:pow(P2 * P2, 1 / Per2)),
   if
@@ -58,7 +62,7 @@ init([]) ->
 
 run() ->
   Proxys = wpool_pool:worker_names(erlking_test),
-  lists:map(fun(Proxy) -> Proxy ! run end, Proxys).
+  lists:map(fun(Proxy) -> gen_server:cast(Proxy, run) end, Proxys).
 
 waiting({ask_for_job, Pid}, #state{heap = Heap} = State) ->
   Pid ! no_job,

@@ -12,32 +12,66 @@
 -include("job.hrl").
 
 %% API
--export([run_board/5]).
+-export([run_board/4]).
 
 %%% @todo Whitespace!
-run_board(Board, History, Click, Score, Initial) ->
+run_board(Board, History, none, Score) ->
+  lager:info("started Small/Large"),
+  Moves = ek_gameboard:find_clickables(Board),
+  {Smallest, Largest, Other} = get_worksets(Moves),
+  ParallelWorkSet = Smallest ++ Largest,
+  do_parallel_work(Board, History, Score, ParallelWorkSet, 10),
+  send_remaining_jobs(Board, History, Score, Other),
+  ek_proxy:run(),
+  lager:info("First finished").
+
+run_board(_, _, _, _, 0) -> ok;
+run_board(Board, History, Click, Score, Depth) ->
   {NewBoard, NewScore} = ek_gameboard:makemove(Board, Click),
   InterScore = Score + NewScore,
   NewHistory = [Click|History],
   Moves = ek_gameboard:find_clickables(NewBoard),
   EndScore = InterScore + ek_gameboard:endgame(NewBoard),
+  %lager:info("EndScore: ~p", [EndScore]),
   ek_queue:result(NewHistory, EndScore),
-  {Smallest, Largest, Other} = split_list(Moves),
+  {Smallest, Largest, Other} = get_worksets(Moves),
   ParallelWorkset = Smallest ++ Largest,
-  F = fun({C, _}) -> run_board(NewBoard, NewHistory, C, EndScore, false) end,
-  pmap(F, ParallelWorkset),
+  do_parallel_work(NewBoard, NewHistory, EndScore, ParallelWorkset, Depth - 1),
+  send_remaining_jobs(NewBoard, NewHistory, InterScore, Other).
+  %lager:info("Deepworker (~p) finished", [Depth]).
+
+
+send_remaining_jobs(NewBoard, NewHistory, InterScore, Other) ->
+  NewBoardHash = erlang:now(),
+  ets:insert(jobstore, {NewBoardHash, NewBoard}),
   RemainingJobs = lists:map(fun({ThisClick, P}) ->
     #job{
       potential = P,
-      board = NewBoard,
-      click = ThisClick,
-      history = NewHistory,
+      board     = NewBoardHash,
+      click     = ThisClick,
+      history   = NewHistory,
       lastscore = InterScore
-    } end, Other),
-  lists:map(fun(RJob) ->
-    ek_pool:add_job(RJob)
-  end, RemainingJobs),
-  if Initial -> ek_proxy:run() end.
+    } end,                  Other),
+  pmap(fun(RJob) -> ek_pool:add_job(RJob) end, RemainingJobs).
+
+do_parallel_work(NewBoard, NewHistory, EndScore, ParallelWorkset, Depth) ->
+  F = fun({C, _}) -> run_board(NewBoard, NewHistory, C, EndScore, Depth) end,
+  pmap(F, ParallelWorkset).
+
+get_worksets([]) -> {[], [], []};
+get_worksets(Moves) ->
+  MovesSmallestFirst = lists:sort(fun small_first_order/2, Moves),
+  MovesLargestFirst = lists:reverse(MovesSmallestFirst),
+  [{_, SmallPot}|_] = MovesSmallestFirst,
+  [{_, LargePot}|_] = MovesLargestFirst,
+  Smallest = lists:takewhile(fun({_, E}) -> E == SmallPot end, MovesSmallestFirst),
+  Largest = lists:takewhile(fun({_, E}) -> E == LargePot end, MovesLargestFirst),
+  OtherPre = lists:reverse(lists:dropwhile(fun({_, E}) -> E == SmallPot end, MovesSmallestFirst)),
+  Other = lists:dropwhile(fun({_, E}) -> E == LargePot end, OtherPre),
+  {Smallest, Largest, Other}.
+
+small_first_order({_, P1}, {_, P2}) ->
+  P1 =< P2.
 
 split_list(List) ->
   split_list(List, {[], [], []}).
@@ -67,8 +101,8 @@ pmap(F, List) ->
   S = self(),
   Pids = lists:map(fun(E1) ->
     spawn(fun() -> execute(S, F, E1) end)
-  end, List),
-  gather(Pids).
+  end, List).
+  %%gather(Pids).
 
 execute(Recv, F, E) ->
   Recv ! {self(), F(E)}.
