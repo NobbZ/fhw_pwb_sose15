@@ -44,8 +44,6 @@ read_board_from_stdin_and_send_it_as_job() ->
   BoardString = io:get_line(""),
   BoardMtrx = ek_gameboard:parse_board(BoardString),
   Moves = ek_gameboard:find_clickables(BoardMtrx),
-  %% Einmal die Penalty berechnen und in Zukunft nur noch gegen rechnen!
-  %%Penalty = gameboard:endgame(BoardMtrx),
   Whitespace = countwhite(BoardMtrx),
   ColorPercentages = get_color_percentages(BoardMtrx),
   ets:insert(colorstore, ColorPercentages),
