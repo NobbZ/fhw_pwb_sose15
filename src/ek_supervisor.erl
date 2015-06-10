@@ -1,4 +1,4 @@
--module(erlking_sup).
+-module(ek_supervisor).
 
 -behaviour(supervisor).
 
