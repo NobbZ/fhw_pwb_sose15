@@ -6,7 +6,8 @@
 -module(ek_gameboard).
 
 -export([parse_board/1, grav_board/1, at/2, at/3, flood_find/3, is_gameboard/1,
-         find_clickables/1, makemove/2, endgame/1, inc_key/2, hash/1]).
+         find_clickables/1, makemove/2, endgame/1, inc_key/2, hash/1, height/1,
+         width/1]).
 
 -export_type([t/0, point/0]).
 
@@ -30,6 +31,12 @@ parse_board(Board) ->
   {value, Value, _} = erl_eval:expr(Form, []),
   MatrixRep = matrix:from_list(Value),
   matrix:transpose(MatrixRep).
+
+height(Board) ->
+  matrix:get_width(Board).
+
+width(Board) ->
+  matrix:get_width(Board).
 
 %% @doc Lets happen gravity on a board.
 %%
