@@ -1,14 +1,37 @@
-.rebar
+# Build toolsets
+# ==============
+
+# rebar
+
+.rebar/
+rebar-src/
 rebar
-.vagrant
-.eunit
+
+# vagrant
+
+.vagrant/
+
+# IDE
+
+.idea/
+pwb.iml
+TAGS
+
+# Build artifacts
+# ===============
+
+.eunit/
 doc/
 ebin/
 deps/
-rebar-src/
-log/
-erlking
 *.plt
 .global_plt.*
+erlking
+
+# Temporary files
+# ===============
+
+log/
+erl_crash.dump
 *~
 #*#

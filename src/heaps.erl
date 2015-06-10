@@ -1,28 +1,29 @@
--module (heaps).
--export ([new/0, new/1, add/2, drop/1, from_list/1, from_list/2, is_empty/1,
-          fetch/1, peek/1, to_list/1, size/1]).
+-module(heaps).
+-export([new/0, new/1, add/2, drop/1, from_list/1, from_list/2, is_empty/1,
+  fetch/1, peek/1, to_list/1, size/1]).
 
--export_type([compare/0, t/0]).
+-export_type([compare/0, t/0, size/0]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
 -type compare() :: fun((any(), any()) -> lt | eq | gt).
+-type size() :: non_neg_integer().
 
--record (prioq, {heap = nil :: nil | tuple(),
-                 size = 0   :: integer(),
-                 compare = fun def_compare/2 :: compare()
-                }
-        ).
+-record(prioq, {heap = nil :: nil | tuple(),
+  size = 0 :: size(),
+  compare = fun def_compare/2 :: compare()
+}
+).
 
 -opaque t() :: #prioq{}.
 
 -spec def_compare(any(), any()) -> lt | eq | gt.
 def_compare(E1, E2) ->
-  if E1 <  E2 -> lt;
-     E1 == E2 -> eq;
-     E1 >  E2 -> gt
+  if E1 < E2 -> lt;
+    E1 == E2 -> eq;
+    E1 > E2 -> gt
   end.
 
 %% @doc Create an empty priorityqueue.
@@ -39,13 +40,15 @@ new(Compare) -> #prioq{compare = Compare}.
 %% @doc Adds an element `E' to the priority queue `Q'.
 -spec add(t(), any()) -> t().
 add(Q = #prioq{heap = Heap, size = N, compare = Compare}, E) ->
-  Q#prioq{heap = meld(Heap, {E, []}, Compare), size = N+1}.
+  Q#prioq{heap = meld(Heap, {E, []}, Compare), size = N + 1}.
 
+
+-spec size(t()) -> size().
 size(#prioq{size = N}) -> N.
 
 -spec drop(t()) -> t().
 drop(Q = #prioq{heap = {_, Sub}, size = N, compare = Compare}) ->
-  Q#prioq{heap = pair(Sub, Compare), size = N-1}.
+  Q#prioq{heap = pair(Sub, Compare), size = N - 1}.
 
 -spec from_list(list()) -> t().
 from_list(L) ->
@@ -65,6 +68,8 @@ is_empty(#prioq{heap = nil, size = 0}) -> true;
 is_empty(_) -> false.
 
 -spec fetch(t()) -> {any(), t()}.
+fetch(#prioq{size = 0} = Q) ->
+  {undefined, Q};
 fetch(Q) ->
   {peek(Q), drop(Q)}.
 
@@ -82,12 +87,12 @@ meld(Q, nil, _Compare) -> Q;
 meld(Left = {X, SubLeft}, Right = {Y, SubRight}, Compare) ->
   case Compare(X, Y) of
     lt ->
-          {X, [Right|SubLeft ]};
+      {X, [Right | SubLeft]};
     _ ->
-      {Y, [Left |SubRight]}
+      {Y, [Left | SubRight]}
   end.
 
-pair([],  _Compare) -> nil;
+pair([], _Compare) -> nil;
 pair([Q], _Compare) -> Q;
 pair([Q0, Q1 | Qs], Compare) ->
   Q2 = meld(Q0, Q1, Compare),
@@ -120,10 +125,10 @@ add_greater_test() ->
 drop_test() ->
   Q0 = example_queue(),
   Q1 = drop(Q0),
-  ?assertMatch(#prioq{heap = {3,[{10,[]},{4,[]}]}, size = 3}, Q1).
+  ?assertMatch(#prioq{heap = {3, [{10, []}, {4, []}]}, size = 3}, Q1).
 
 from_and_to_list_test() ->
-  L = [1,2,3,4,5],
+  L = [1, 2, 3, 4, 5],
   Q = from_list(L),
   ?assertEqual(to_list(Q), L).
 
@@ -132,5 +137,5 @@ is_not_empty_test() ->
 
 is_empty_test() ->
   ?assert(is_empty(new())).
-  
+
 -endif.

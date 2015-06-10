@@ -4,31 +4,31 @@
 %% @author Norbert Melzer <inf100760@fh-wedel.de>
 %% @reference See <a href="http://en.wikipedia.org/wiki/Matrix_(mathematics)">
 %% Wikipedia article about matrixes</a> for further information.
--module (matrix).
+-module(matrix).
 
--export ([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1,
-          to_column_vecs/1, from_column_vecs/1, get_height/1, get_width/1,
-          map_pos/2, new/3]).
--export_type ([t/0, generator/0, dim/0]).
+-export([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1,
+  to_column_vecs/1, from_column_vecs/1, get_height/1, get_width/1,
+  map_pos/2, new/3]).
+-export_type([t/0, generator/0, dim/0]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--record (matrix, {width   = 0    :: dim(),
-                  height  = 0    :: dim(),
-                  payload = <<>> :: binary()}).
+-record(matrix, {width = 0 :: dim(),
+  height = 0 :: dim(),
+  payload = <<>> :: binary()}).
 
--opaque t()       :: #matrix{width   :: dim(),
-                             height  :: dim(), 
-                             payload :: binary() }.
--type dim()       :: non_neg_integer().
+-opaque t() :: #matrix{width :: dim(),
+height :: dim(),
+payload :: binary()}.
+-type dim() :: non_neg_integer().
 -type generator() :: fun((non_neg_integer(), non_neg_integer()) -> any()).
 
 
--define (inbetween (V, Min, Max), (((Min) =< (V)) and ((V) =< (Max)))).
--define (is_byte (V), ?inbetween(V, 16#00, 16#ff)).
--define (else, true).
+-define(inbetween(V, Min, Max), (((Min) =< (V)) and ((V) =< (Max)))).
+-define(is_byte(V), ?inbetween(V, 16#00, 16#ff)).
+-define(else, true).
 
 % ==============================================================================
 % Retrieve information about the matrix
@@ -47,11 +47,11 @@ get_width(#matrix{width = W}) -> W.
 % ==============================================================================
 
 %% @doc Creates a new matrix with given dimension filled with value `Default'.
--spec new(Width   :: dim(), 
-          Height  :: dim(),
-          Default :: byte()) -> t().
+-spec new(Width :: dim(),
+    Height :: dim(),
+    Default :: byte()) -> t().
 new(Width, Height, Default) ->
-  List    = lists:duplicate(Width * Height, Default),
+  List = lists:duplicate(Width * Height, Default),
   Payload = list_to_binary(List),
   #matrix{width = Width, height = Height, payload = Payload}.
 
@@ -88,10 +88,10 @@ from_row_vecs(Vs) when is_list(Vs) ->
   from_row_vecs(Vs, #matrix{}).
 
 %% @doc Builds a new matrix from a list of `vector's.
--spec from_row_vecs(Vs  :: [vector:t()],
-                    Acc :: t()) -> t().
+-spec from_row_vecs(Vs :: [vector:t()],
+    Acc :: t()) -> t().
 from_row_vecs([], M) -> M;
-from_row_vecs([V|Vs], #matrix{height = H, payload = <<M/binary>>}) ->
+from_row_vecs([V | Vs], #matrix{height = H, payload = <<M/binary>>}) ->
   NewH = H + 1,
   NewW = vector:get_size(V),
   VBin = vector:to_binary(V),
@@ -99,9 +99,9 @@ from_row_vecs([V|Vs], #matrix{height = H, payload = <<M/binary>>}) ->
   from_row_vecs(Vs, #matrix{width = NewW, height = NewH, payload = NewM}).
 
 %% @doc Generate a matrix from a generator function.
--spec matrix(Width  :: dim(),
-             Height :: dim(),
-             GenFun :: generator()) -> t().
+-spec matrix(Width :: dim(),
+    Height :: dim(),
+    GenFun :: generator()) -> t().
 matrix(Width, Height, GenFun) ->
   B = lists:sort(lists:flatten(lists:duplicate(Width, lists:seq(0, Height - 1)))),
   A = lists:flatten(lists:duplicate(Height, lists:seq(0, Width - 1))),
@@ -151,13 +151,13 @@ to_row_vecs(#matrix{width = W, height = H, payload = <<M/binary>>}) ->
 -spec to_column_vecs(t()) -> [vector:t()].
 to_column_vecs(M) ->
   to_row_vecs(transpose(M)).
-  % RowIdxs = lists:seq(0, H - 1),
-  % ColIdxs = lists:seq(0, W - 1),
-  % lists:map(fun(Col) ->
-  %   vector:from_binary(list_to_binary(lists:map(fun(Row) ->
-  %     binary:at(M, Row * W + Col)
-  %   end, RowIdxs)))
-  % end, ColIdxs).
+% RowIdxs = lists:seq(0, H - 1),
+% ColIdxs = lists:seq(0, W - 1),
+% lists:map(fun(Col) ->
+%   vector:from_binary(list_to_binary(lists:map(fun(Row) ->
+%     binary:at(M, Row * W + Col)
+%   end, RowIdxs)))
+% end, ColIdxs).
 
 % @doc Gets the specified line-vector.
 % Counting starts with 0.
@@ -177,11 +177,7 @@ to_column_vecs(M) ->
 
 -spec at(t(), non_neg_integer(), non_neg_integer()) -> any().
 at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
-    binary:at(M, Y * W + X);
-at(#matrix{width = W, height = H} = M, X, Y) ->
-    Trace = try throw(42) catch 42 -> erlang:get_stacktrace() end,
-    lager:error("~p accessed with ~p, ~p; Trace: ~p", [M, X, Y, Trace]),
-    erlang:display(Trace).
+  binary:at(M, Y * W + X).
 
 % ==============================================================================
 % Tests
@@ -190,58 +186,58 @@ at(#matrix{width = W, height = H} = M, X, Y) ->
 -ifdef (TEST).
 
 get_width_test() ->
-  M1 = from_list([[1,2,3],[4,5,6],[7,8,9]]),
-  M2 = from_list([[1,2,3]]),
+  M1 = from_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+  M2 = from_list([[1, 2, 3]]),
   ?assertEqual(3, get_width(M1)),
   ?assertEqual(3, get_width(M2)).
 
 get_height_test() ->
-  M1 = from_list([[1,2,3],[4,5,6],[7,8,9]]),
-  M2 = from_list([[1,2,3]]),
+  M1 = from_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+  M2 = from_list([[1, 2, 3]]),
   ?assertEqual(3, get_height(M1)),
   ?assertEqual(1, get_height(M2)).
 
 from_list_test() ->
-  List = [[1,2,3],[4,5,6],[7,8,9]],
-  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1,2,3,4,5,6,7,8,9>>},
-               from_list(List)).
+  List = [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1, 2, 3, 4, 5, 6, 7, 8, 9>>},
+    from_list(List)).
 
 matrix_test() ->
-  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1,2,3,2,4,6,3,6,9>>},
-               matrix(3, 3, fun(X,Y) -> (X+1) * (Y+1) end)).
+  ?assertEqual(#matrix{width = 3, height = 3, payload = <<1, 2, 3, 2, 4, 6, 3, 6, 9>>},
+    matrix(3, 3, fun(X, Y) -> (X + 1) * (Y + 1) end)).
 
 transpose_1_x_m_test() ->
-  MOrig = from_list([[1,2,3]]),
-  MExp  = from_list([[1],[2],[3]]),
+  MOrig = from_list([[1, 2, 3]]),
+  MExp = from_list([[1], [2], [3]]),
   ?assertEqual(MExp, transpose(MOrig)).
 %  ?assertEqual(transpose([[1,2,3]]), [[1],[2],[3]]).
 
 transpose_n_x_1_test() ->
-  MOrig = from_list([[1],[2],[3]]),
-  MExp  = from_list([[1,2,3]]),
+  MOrig = from_list([[1], [2], [3]]),
+  MExp = from_list([[1, 2, 3]]),
   ?assertEqual(MExp, transpose(MOrig)).
 
 transpose_n_x_m_test() ->
-  MOrig = from_list([[1,2,3],[4,5,6],[7,8,9]]),
-  MExp  = from_list([[1,4,7],[2,5,8],[3,6,9]]),
+  MOrig = from_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+  MExp = from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]]),
   ?assertEqual(MExp, transpose(MOrig)).
 
 transpose_transpose_is_id_test() ->
-  M = from_list([[1,4,7],[2,5,8],[3,6,9]]),
+  M = from_list([[1, 4, 7], [2, 5, 8], [3, 6, 9]]),
   ?assertEqual(transpose(transpose(M)), M).
 
 to_row_vecs_test() ->
-  M  = from_list([[1,2,3],[4,5,6],[7,8,9]]),
-  Vs = [vector:from_binary(<<1,2,3>>),
-        vector:from_binary(<<4,5,6>>),
-        vector:from_binary(<<7,8,9>>)],
+  M = from_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+  Vs = [vector:from_binary(<<1, 2, 3>>),
+    vector:from_binary(<<4, 5, 6>>),
+    vector:from_binary(<<7, 8, 9>>)],
   ?assertEqual(Vs, to_row_vecs(M)).
 
 to_column_vecs_test() ->
-  M  = from_list([[1,2,3],[4,5,6],[7,8,9]]),
-  Vs = [vector:from_binary(<<1,4,7>>),
-        vector:from_binary(<<2,5,8>>),
-        vector:from_binary(<<3,6,9>>)],
+  M = from_list([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
+  Vs = [vector:from_binary(<<1, 4, 7>>),
+    vector:from_binary(<<2, 5, 8>>),
+    vector:from_binary(<<3, 6, 9>>)],
   ?assertEqual(Vs, to_column_vecs(M)).
 
 % get_line_vector_test() ->
