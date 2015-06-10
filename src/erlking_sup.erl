@@ -23,7 +23,13 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-  Board = io:get_line(""),
-  BoardMtrx = erlking_tools:parse_board(Board),
-  io:format("~w~n", [BoardMtrx]),
-  {ok, { {one_for_one, 5, 10}, []} }.
+  Cores   = erlang:system_info(logical_processors_available),
+  ListOfNames = lists:map(fun(A) ->
+    list_to_atom(lists:flatten(io_lib:format("worker~w", [A])))
+  end, lists:seq(1, 50 * Cores)),
+  Workers = lists:map(fun(Label) ->
+    {Label, {erlking_worker, start_link, []}, permanent, 5000, worker, [erlking_worker]}
+  end, ListOfNames),
+  Queue   = {queue_server, {erlking_queue,  start_link, []}, permanent, 5000, worker, [erlking_queue]},
+  ProcessList = [Queue | Workers],
+  {ok, { {one_for_one, 5, 10}, ProcessList} }.
