@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 % API
--export([start_link/0, result/2, result2/2]).
+-export([start_link/0, result2/2]).
 
 % Exports for implementing behaviour 'gen_server'.
 -export([code_change/3, handle_call/3, handle_cast/2, handle_info/2, init/1,
@@ -22,10 +22,6 @@
 start_link() ->
   lager:info("Starting ~p", [?MODULE]),
   gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
-
--spec result([term()], non_neg_integer()) -> non_neg_integer().
-result(Moves, Score) ->
-  gen_server:call(?MODULE, {result, Moves, Score}).
 
 -spec result2([term()], non_neg_integer()) -> non_neg_integer().
 result2(History, Score) ->
