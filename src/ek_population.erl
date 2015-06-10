@@ -18,10 +18,10 @@
 
 -include("individual.hrl").
 
--define(POPULATION, 100).
+-define(POPULATION, 75).
 -define(GEN_IDX, (ceil(?POPULATION / 10))).
--define(MUTATE_PROP, 0.1).
--define(RECOMBINE_PROP, 0.1).
+-define(MUTATE_PROP, 0.75).
+-define(RECOMBINE_PROP, 0.75).
 
 new(Cols, Rows) ->
   new(?POPULATION, Cols, Rows).
