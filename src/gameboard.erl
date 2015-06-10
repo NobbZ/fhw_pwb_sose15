@@ -6,7 +6,7 @@
 -module (gameboard).
 
 -export ([parse_board/1, grav_board/1, at/2, at/3, flood_find/3, 
-          find_clickables/1, makemove/2]).
+          find_clickables/1, makemove/2, endgame/1]).
 
 -export_type ([t/0]).
 
@@ -67,7 +67,7 @@ makemove(Board, {X, Y}) ->
 find_clickables(Board) ->
     find_clickables(Board,
                     0, 0,
-                    matrix:get_width(Board), matrix:get_height(Board),
+                    matrix:get_height(Board), matrix:get_width(Board),
                     [], sets:new()).
 
 %% @doc Finds one sample-coordinate for every larger group of stones.
@@ -87,7 +87,7 @@ find_clickables(Board,  MX, Y,  MX, MY, Acc, Checked) ->
 find_clickables(Board,  X,  Y,  MX, MY, Acc, Checked) when (X < MX) and (Y < MY) ->
     case sets:is_element({X, Y}, Checked) of
         false ->
-            FieldsSet = flood_find(Board, X, Y),
+            FieldsSet = flood_find(Board, X, Y), % flood_find(Board, X, Y),
             NewChecked = sets:union(Checked, FieldsSet),
             SetSize = sets:size(FieldsSet),
             NewAcc = case SetSize >= 2 of
@@ -111,8 +111,8 @@ flood_fill(Board, X, Y) ->
     Color = at(Board, X, Y),
     if Color /= 0 ->
             FieldsSet = flood_find(Board,
-                                   matrix:get_width(Board),
-                                   matrix:get_height(Board), 
+                                   matrix:get_height(Board),
+                                   matrix:get_width(Board), 
                                    Color,
                                    [{X, Y}],
                                    sets:new()),
@@ -130,19 +130,19 @@ flood_fill(Board, X, Y) ->
                   t().
 fill(Board, Stones) ->
     F = fun(MX, MY) ->
-                case sets:is_element({MY, MX}, Stones) of
+                case sets:is_element({MX, MY}, Stones) of
                     true  -> 0;
-                    false -> matrix:at(Board, MX, MY)
+                    false -> gameboard:at(Board, MX, MY)
                 end
         end,
-    matrix:map_pos(F, Board).
+    matrix:transpose(matrix:map_pos(F, Board)).
 
 -spec flood_find(t(), non_neg_integer(), non_neg_integer()) -> set().
 flood_find(Board, X, Y) ->
     Color =  at(Board, X, Y),
     if
         Color /= 0 ->
-            flood_find(Board, matrix:get_width(Board), matrix:get_height(Board), Color, [{X, Y}], sets:new());
+            flood_find(Board, matrix:get_height(Board), matrix:get_width(Board), Color, [{X, Y}], sets:new());
         true ->
             sets:new()
     end.
@@ -172,6 +172,20 @@ down_grav(Board) ->
                            end, Columns),
     matrix:from_row_vecs(NewColumns).
 
+endgame(B) ->
+    V0 = matrix:to_row_vecs(B),
+    V1 = lists:foldl(fun(V, Acc) -> vector:concat(Acc, V) end, vector:from_binary(<<>>), V0),
+    List = binary_to_list(vector:to_binary(V1)),
+    Stones = lists:foldl(fun(E, Store) -> inc_key(E, Store) end, [], List),
+    Stones1 = lists:keydelete(0, 1, Stones),
+    lists:foldr(fun({K, V}, Acc) -> Acc - (V-1) * (V-1) end, 0, Stones1).
+
+inc_key(Key, Store) ->
+    Val = case lists:keysearch(Key, 1, Store) of
+              {value, {_, V}} -> V;
+              false           -> 0
+          end,
+    lists:keystore(Key, 1, Store, {Key, Val + 1}).
 
                                                 % lists:map(fun(L) ->
                                                 %   {Front, Back} = lists:partition(fun(Field) -> Field /= 0 end, L),
@@ -295,5 +309,21 @@ find_clickables_moved_test() ->
     C = grav_board(B),
     List = find_clickables(C),
     ?assertEqual([{{0,0},5},{{2,0},2},{{3,2},2}], lists:sort(List)).
+
+rectangular_parse_test() ->
+    B = parse_board("[[1,2,3],[1,2,3]]"),
+    ?assertEqual({matrix,2,3,<<1,1,2,2,3,3>>}, B).
+
+rectangular_at_test() ->
+    B = parse_board("[[1,2,3],[1,2,3]]"),
+    ?assertEqual(1, at(B, 0, 0)),
+    ?assertEqual(2, at(B, 1, 0)),
+    ?assertEqual(3, at(B, 2, 1)).
+
+rectangular_flood_fill_test() ->
+    B = parse_board("[[1,2,3],[1,2,3]]"),
+    {B1, _} = flood_fill(B, 0, 0),
+    Exp = parse_board("[[2,3,0],[2,3,0]]"),
+    ?assertEqual(Exp, B1).
 
 -endif.
