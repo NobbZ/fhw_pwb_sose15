@@ -34,24 +34,24 @@ transpose(M) ->
 -ifdef(TEST).
 
 parse_board_test() ->
-  ?assert(parse_board("[[1,2,3]]") == [[1],[2],[3]]),
-  ?assert(parse_board("[[1,2,3],[4,5,6],[7,8,9]]") == [[1,4,7],[2,5,8],[3,6,9]]).
+  ?assertEqual(parse_board("[[1,2,3]]"), [[1],[2],[3]]),
+  ?assertEqual(parse_board("[[1,2,3],[4,5,6],[7,8,9]]"), [[1,4,7],[2,5,8],[3,6,9]]).
 
 parse_board_with_whitespace_test() ->
-  ?assert(parse_board("[[1, 2, 3]]") == [[1],[2],[3]]),
-  ?assert(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]") == [[1,4,7],[2,5,8],[3,6,9]]).
+  ?assertEqual(parse_board("[[1, 2, 3]]"), [[1],[2],[3]]),
+  ?assertEqual(parse_board("[[1, 2, 3], [4, 5, 6], [7, 8, 9]]"), [[1,4,7],[2,5,8],[3,6,9]]).
 
 transpose_1_x_m_test() ->
-  ?assert(transpose([[1,2,3]]) == [[1],[2],[3]]).
+  ?assertEqual(transpose([[1,2,3]]), [[1],[2],[3]]).
 
 transpose_n_x_1_test() ->
-  ?assert(transpose([[1],[2],[3]]) == [[1,2,3]]).
+  ?assertEqual(transpose([[1],[2],[3]]), [[1,2,3]]).
 
 transpose_n_x_m_test() ->
-  ?assert(transpose([[1,2,3],[4,5,6],[7,8,9]]) == [[1,4,7],[2,5,8],[3,6,9]]).
+  ?assertEqual(transpose([[1,2,3],[4,5,6],[7,8,9]]), [[1,4,7],[2,5,8],[3,6,9]]).
 
 transpose_transpose_is_id_test() ->
   M = [[1,4,7],[2,5,8],[3,6,9]],
-  ?assert(transpose(transpose(M)) == M).
+  ?assertEqual(transpose(transpose(M)), M).
 
 -endif.
