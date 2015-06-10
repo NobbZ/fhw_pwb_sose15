@@ -20,11 +20,7 @@
   Reason :: term(),
   State :: term().
 start(normal, _StartArgs) ->
-  Cores = case erlang:system_info(logical_processors_available) of
-            unknown -> 1;
-            C when C =< 0 -> 1;
-            C -> C
-          end,
+  Cores = number_of_cores(),
   ets:new(jobstore, [set, public, named_table,
     %% compressed,
     {keypos, 1}]),
@@ -35,6 +31,13 @@ start(normal, _StartArgs) ->
   timer:sleep(100),
   read_board_from_stdin_and_send_it_as_job(),
   {ok, self()}.
+
+number_of_cores() ->
+  case erlang:system_info(logical_processors_available) of
+    unknown -> 1;
+    C when C =< 0 -> 1;
+    C -> C
+  end.
 
 -spec stop(term()) -> ok.
 stop(_) ->
