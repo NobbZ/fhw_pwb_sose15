@@ -40,6 +40,7 @@ at(Board, {X, Y}) ->
 find_clickables(Board) ->
   find_clickables(Board, Board, 0, 0, [], sets:new()).
 
+%% @TODO Really ugly...
 find_clickables(_Board, [], _, _, Acc, _) -> Acc;
 find_clickables(Board, [[]|Fss], X, _, Acc, Checked) ->
   find_clickables(Board, Fss, X+1, 0, Acc, Checked);
