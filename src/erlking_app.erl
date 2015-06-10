@@ -27,7 +27,10 @@ start(normal, _StartArgs) ->
           end,
   ets:new(jobstore, [set, public, named_table,
     %% compressed,
-    {keypos, 1}]),
+    {keypos, 1},
+    {write_concurrency, true},
+    {read_concurrency, true}
+  ]),
   ets:new(colorstore, [set, public, {keypos, 1}, named_table]),
   wpool:start_sup_pool(erlking_test, [{worker, {ek_pworker, []}},
     {workers, 1 * Cores}]),
@@ -43,13 +46,16 @@ stop(_) ->
 read_board_from_stdin_and_send_it_as_job() ->
   BoardString = io:get_line(""),
   BoardMtrx = ek_gameboard:parse_board(BoardString),
+  BoardHash = erlang:phash2(BoardMtrx),
+  ets:insert(jobstore, {BoardHash, BoardMtrx}),
   Moves = ek_gameboard:find_clickables(BoardMtrx),
   Whitespace = countwhite(BoardMtrx),
   ColorPercentages = get_color_percentages(BoardMtrx),
   ets:insert(colorstore, ColorPercentages),
   Jobs = lists:map(fun({ThisClick, Pot}) ->
     #job{potential = Pot,
-      board = BoardMtrx,
+      %board = BoardMtrx,
+      board = BoardHash,
       click = ThisClick,
       %%lastscore  = Penalty,
       whitespace = Whitespace}
