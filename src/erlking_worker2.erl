@@ -2,8 +2,8 @@
 
 -export([start_link/1]).
 
--record(state, {proxy     = undefined :: port() | undefined,
-                lastscore = 0         :: non_neg_integer()}).
+-record(state, {proxy     = undefined   :: port() | undefined,
+                lastscore = -4294836225 :: integer()}).
 
 -include("job.hrl").
 
@@ -12,7 +12,7 @@ start_link(Proxy) ->
     loop(State).
 
 loop(#state{proxy = Proxy, lastscore = Last} = State) ->
-    proxy:ask_for_job(Proxy),
+    erlking_proxy:ask_for_job(Proxy),
     State1 = receive
                  Job ->
                      {Jobs, Score, Hist} = process_job(Job),
@@ -27,7 +27,7 @@ loop(#state{proxy = Proxy, lastscore = Last} = State) ->
 
 tell_score(Score, History, LastScore) ->
     case Score > LastScore of
-        true  -> erlking_queue:result(History, Score);
+        true  -> erlking_queue:result2(History, Score);
         false -> LastScore
     end.
 
@@ -39,15 +39,12 @@ process_job(#job{board = Board,
     InterScore = Last + JobScore,
     NewHistory = [Click|History],
     Moves = gameboard:find_clickables(NewBoard),
-    EndScore = case Moves of
-                   [] -> InterScore + gameboard:endgame(Board);
-                   _  -> InterScore
-               end,
+    EndScore = InterScore + gameboard:endgame(NewBoard),
     Jobs = lists:map(fun({ThisClick, Pot}) ->
                              #job{potential = Pot,
                                   board     = NewBoard,
                                   click     = ThisClick,
                                   history   = NewHistory,
-                                  lastscore = EndScore}
+                                  lastscore = InterScore}
                      end, Moves),
     {Jobs, EndScore, NewHistory}.
