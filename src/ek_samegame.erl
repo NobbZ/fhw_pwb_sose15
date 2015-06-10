@@ -12,7 +12,7 @@
 -include("individual.hrl").
 
 %% API
--export([new/1]).
+-export([new/1, fitness_of/2]).
 
 -record(samegame, {colors = 0 :: non_neg_integer(),
                    history = nil :: ek_history:history(),
@@ -30,7 +30,7 @@ new(Board) ->
             history = History,
             cols    = Cols,
             rows    = Rows,
-            board   = Board}.
+            board   = initial}.
 
 count_colors(Board) ->
   V0 = matrix:to_row_vecs(Board),
@@ -52,8 +52,11 @@ iterate_g({_, _}, {#individual{}, #samegame{}, true} = Res) -> Res;
 iterate_g({HitIdx, Idx}, {#individual{} = I, #samegame{} = SG, false}) ->
   {Score, Next} = ek_history:make_click(SG#samegame.history, SG#samegame.board,
     HitIdx),
-  NewI   = I#individual{f = I#individual.f + Score},
   NewSG  = SG#samegame{board = Next},
-  Finished = Score == 0,
+  Finished = Next == nil,
+  NewI = case Finished of
+           true -> I#individual{f = I#individual.f + Score};
+           false -> I#individual{f = I#individual.f + Score, max_hit_idx = I#individual.max_hit_idx + 1}
+  end,
   {NewI, NewSG, Finished}.
 
