@@ -6,6 +6,7 @@ doc/
 ebin/
 deps/
 rebar-src/
+log/
 erlking
 *.plt
 .global_plt.*
