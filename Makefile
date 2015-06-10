@@ -39,7 +39,7 @@ all:
 .PHONY: all
 
 run:
-	$(ERLANG) -config erlking +A 5 -pa $(BEAMDIR) $(DEPSBIN:%=-pa %) -eval 'application:ensure_all_started(erlking).' -noshell
+	$(ERLANG) -sname $(NAME) -config erlking +A 5 -pa $(BEAMDIR) $(DEPSBIN:%=-pa %) -eval 'application:ensure_all_started(erlking).' -noshell
 	#@./$(BIN)
 
 repl: $(OBJFILES)
