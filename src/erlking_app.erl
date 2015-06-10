@@ -35,7 +35,7 @@ start(normal, _StartArgs) ->
     %% compressed,
     {keypos, 1}]),
   ets:new(colorstore, [set, public, {keypos, 1}, named_table]),
-  wpool:start_sup_pool(erlking_test, [{worker, {erlking_pworker, []}},
+  wpool:start_sup_pool(erlking_test, [{worker, {ek_pworker, []}},
     {workers, 4 * Cores}]),
   erlking_sup:start_link(),
   timer:sleep(100),
