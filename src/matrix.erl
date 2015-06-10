@@ -4,7 +4,9 @@
 %% Wikipedia article about matrixes</a> for further information.
 -module (matrix).
 
--export ([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1]).
+-export ([transpose/1, from_list/1, matrix/3, at/3, to_row_vecs/1, from_row_vecs/1,
+          to_column_vecs/1, from_column_vecs/1, get_height/1, get_width/1,
+          map_pos/2, new/3]).
 -export_type ([t/0]).
 
 -ifdef (TEST).
@@ -13,9 +15,9 @@
 
 -record (matrix, {width   = 0    :: non_neg_integer(),
                   height  = 0    :: non_neg_integer(),
-                  payload = <<>> :: array() | binary()}).
+                  payload = <<>> :: binary()}).
 
--opaque t()       :: #matrix{width :: non_neg_integer(), height :: non_neg_integer(), payload :: array() | binary() }.
+-opaque t()       :: #matrix{width :: non_neg_integer(), height :: non_neg_integer(), payload :: binary() }.
 -type generator() :: fun((non_neg_integer(), non_neg_integer()) -> any()).
 
 -define (inbetween (V, Min, Max), (((Min) =< (V)) and ((V) =< (Max)))).
@@ -41,11 +43,7 @@ get_width(#matrix{width = W}) -> W.
 -spec new(non_neg_integer(), non_neg_integer(), any()) -> t().
 new(Width, Height, Default) ->
   List    = lists:duplicate(Width * Height, Default),
-  Payload = if is_integer(Default) and ?inbetween(Default, 16#00, 16#ff) ->
-    list_to_binary(List);
-  ?else ->
-    array:fix(array:from_list(List))
-  end,
+  Payload = list_to_binary(List),
   #matrix{width = Width, height = Height, payload = Payload}.
 
 -spec from_list([[any()]]) -> t().
@@ -57,18 +55,12 @@ from_list(List) ->
   end, List)),
   Height = lists:foldl(fun(_, Len) -> 1 + Len end, 0, List),
   FlatList = lists:concat(List),
-  AllInts = lists:all(fun is_integer/1, FlatList),
-  BinaryFits = if AllInts ->
-    lists:all(fun(X) -> ?is_byte(X) end, FlatList);
-  ?else ->
-    false
-  end,
-  Payload = if BinaryFits ->
-    list_to_binary(FlatList);
-  ?else ->
-    array:fix(array:from_list(FlatList))
-  end,
+  Payload = list_to_binary(FlatList),
   #matrix{width = Width, height = Height, payload = Payload}.
+
+-spec from_column_vecs([vector:t()]) -> t().
+from_column_vecs(M) ->
+  transpose(from_row_vecs(M)).
 
 -spec from_row_vecs([vector:t()]) -> t().
 from_row_vecs(Vs) when is_list(Vs) ->
@@ -76,7 +68,7 @@ from_row_vecs(Vs) when is_list(Vs) ->
 
 -spec from_row_vecs([vector:t()], t()) -> t().
 from_row_vecs([], M) -> M;
-from_row_vecs([V|Vs], #matrix{width = W, height = H, payload = <<M/binary>>}) ->
+from_row_vecs([V|Vs], #matrix{height = H, payload = <<M/binary>>}) ->
   NewH = H + 1,
   NewW = vector:get_size(V),
   VBin = vector:to_binary(V),
@@ -89,29 +81,8 @@ matrix(Width, Height, GenFun) ->
   B = lists:sort(lists:flatten(lists:duplicate(Width, lists:seq(0, Height - 1)))),
   A = lists:flatten(lists:duplicate(Height, lists:seq(0, Width - 1))),
   C = lists:zipwith(GenFun, A, B),
-  AllInts = lists:all(fun is_integer/1, C),
-  BinaryFits = if AllInts ->
-    lists:all(fun(X) -> ?is_byte(X) end, C);
-  ?else ->
-    false
-  end,
-  Payload = if BinaryFits ->
-    list_to_binary(C);
-  ?else ->
-    array:fix(array:from_list(C))
-  end,
+  Payload = list_to_binary(C),
   #matrix{width = Width, height = Height, payload = Payload}.
-
-  %splice_list(C, Cols).
-
--spec splice_list([any()], pos_integer()) -> t().
-splice_list(List, Cols) -> lists:reverse(splice_list(List, Cols, [])).
-
--spec splice_list([any()], pos_integer, [[any()]]) -> [[any()]].
-splice_list([], _Cols, Acc) -> Acc;
-splice_list(List, Cols, Acc) ->
-  {Vec, Rest} = lists:split(Cols, List),
-  splice_list(Rest, Cols, [Vec|Acc]).
 
 % ==============================================================================
 % Simple transformations
@@ -156,6 +127,17 @@ to_row_vecs(#matrix{width = W, height = H, payload = <<M/binary>>}) ->
     vector:from_binary(binary_part(M, W * Row, W))
   end, RowIdxs).
 
+-spec to_column_vecs(t()) -> [vector:t()].
+to_column_vecs(M) ->
+  to_row_vecs(transpose(M)).
+  % RowIdxs = lists:seq(0, H - 1),
+  % ColIdxs = lists:seq(0, W - 1),
+  % lists:map(fun(Col) ->
+  %   vector:from_binary(list_to_binary(lists:map(fun(Row) ->
+  %     binary:at(M, Row * W + Col)
+  %   end, RowIdxs)))
+  % end, ColIdxs).
+
 % @doc Gets the specified line-vector.
 % Counting starts with 0.
 % -spec get_line_vector(t(), non_neg_integer()) -> vector:t().
@@ -174,12 +156,7 @@ to_row_vecs(#matrix{width = W, height = H, payload = <<M/binary>>}) ->
 
 -spec at(t(), non_neg_integer(), non_neg_integer()) -> any().
 at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
-  binary:at(M, Y * W + X);
-at(#matrix{width = W, height = H, payload = M}, X, Y) when ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
-  array:get(Y * W + X, M).
-% at(M, X, Y) ->
-%   V = lists:nth(Y + 1, M),
-%   lists:nth(X + 1, V).
+  binary:at(M, Y * W + X).
 
 % ==============================================================================
 % Tests
@@ -234,6 +211,13 @@ to_row_vecs_test() ->
         vector:from_binary(<<4,5,6>>),
         vector:from_binary(<<7,8,9>>)],
   ?assertEqual(Vs, to_row_vecs(M)).
+
+to_column_vecs_test() ->
+  M  = from_list([[1,2,3],[4,5,6],[7,8,9]]),
+  Vs = [vector:from_binary(<<1,4,7>>),
+        vector:from_binary(<<2,5,8>>),
+        vector:from_binary(<<3,6,9>>)],
+  ?assertEqual(Vs, to_column_vecs(M)).
 
 % get_line_vector_test() ->
 %   M = [[1,4,7],[2,5,8],[3,6,9]],
