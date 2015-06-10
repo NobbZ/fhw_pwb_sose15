@@ -23,6 +23,14 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
+  {ok, {{one_for_one, 5, 10}, [
+    queue()
+  ]}}.
+
+queue() ->
+  {erlking_queue, {erlking_queue,  start_link, []}, permanent, 5000, worker, [erlking_queue]}.
+
+old_init([]) ->
   Cores   = erlang:system_info(logical_processors_available),
   ListOfNames = lists:map(fun(A) ->
     list_to_atom(lists:flatten(io_lib:format("worker~w", [A])))

@@ -58,8 +58,8 @@ find_clickables(Board, [[_|Fs]|Fss], X, Y, Acc, Checked) ->
       NewChecked = sets:union(Checked, FieldsSet),
       SetSize = sets:size(FieldsSet),
       if
-        SetSize > 1 ->
-          NewAcc = [{X, Y}|Acc];
+        SetSize >= 2 ->
+          NewAcc = [{{X, Y}, SetSize}|Acc];
         true -> % Really, this IS else!
           NewAcc = Acc
       end,
