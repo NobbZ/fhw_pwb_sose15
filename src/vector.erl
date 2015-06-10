@@ -7,11 +7,11 @@
 -include_lib("eunit/include/eunit.hrl").
 -endif.
 
--type t()    :: binary() | array().
+-type t()    :: binary() | array:array(any()).
 -type pred() :: fun((any()) -> boolean()).
 
 -record (vector, {size    = 0    :: integer(),
-                  payload = <<>> :: binary() | array()}).
+                  payload = <<>> :: binary() | array:array(any())}).
 
 -spec from_binary(binary()) -> t().
 from_binary(<<V/binary>>) ->
@@ -26,14 +26,12 @@ get_size(V) -> V#vector.size.
 
 -spec partition(pred(), t()) -> {t(), t()}.
 partition(P, #vector{payload = V}) ->
-  io:format("~w~n", [V]),
   {Left, Right} = partition_priv(P, V),
   {from_binary(Left), from_binary(Right)}.
 
 -spec partition_priv(pred(), VType) -> {VType, VType} when
-  VType :: binary() | array().
+  VType :: binary() | array:array(any()).
 partition_priv(P, <<Es/binary>>) ->
-  io:format("~w~n", [Es]),
   partition_rec(P, Es, {<<>>, <<>>}).
 
 partition_rec(_, <<>>, Acc) -> Acc;
