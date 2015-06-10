@@ -5,10 +5,10 @@
 -include("job.hrl").
 
 %%% gen_fsm
--export([init/1, collecting/2, dropping/2]).
+-export([init/1, collecting/2, dropping/2, waiting/2]).
 
 %%% api
--export([start_link/0, ask_for_job/2]).
+-export([start_link/0, ask_for_job/2, run/0]).
 
 -export_types([]).
 
@@ -51,12 +51,25 @@ start_link() ->
 
 init([]) ->
   lager:info("init of proxy ~w", [self()]),
-  Workers = lists:map(fun(_) -> spawn_link(ek_worker, start_link, [self()]) end, lists:seq(1, ?NUM_WORKERS)),
-  lager:info("proxy ~w has started worker ~w", [self(), Workers]),
   State = #state{heap = heaps:new(fun compare/2)},
   lager:info("proxy ~w enters state of collecting with state ~p",
              [self(), State]),
-  {ok, collecting, State}.
+  {ok, waiting, State}.
+
+run() ->
+  Proxys = wpool_pool:worker_names(erlking_test),
+  lists:map(fun(Proxy) -> Proxy ! run end, Proxys).
+
+waiting({ask_for_job, Pid}, #state{heap = Heap} = State) ->
+  Pid ! no_job,
+  {next_state, waiting, State};
+waiting({add_job, Job}, #state{heap = Heap} = State) ->
+  Heap1 = heaps:add(Heap, Job),
+  {next_state, waiting, State#state{heap = Heap1}};
+waiting(run, State) ->
+  Workers = lists:map(fun(_) -> spawn_link(ek_worker, start_link, [self()]) end, lists:seq(1, ?NUM_WORKERS)),
+  lager:info("proxy ~w has started worker ~w", [self(), Workers]),
+  {next_state, collecting, State}.
 
 collecting({ask_for_job, Pid}, #state{heap = Heap} = State) ->
   HeapSize = heaps:size(Heap),
