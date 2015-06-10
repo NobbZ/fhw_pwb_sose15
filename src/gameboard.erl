@@ -2,7 +2,8 @@
 
 -type t() :: matrix:t(byte()).
 
--export ([parse_board/1, grav_board/1, at/2, at/3]).
+-export ([parse_board/1, grav_board/1, at/2, at/3, flood_find/3,
+          find_clickables/1]).
 
 -ifdef (TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -34,6 +35,56 @@ at(Board, X, Y) ->
 -spec at(t(), {non_neg_integer(), non_neg_integer()}) -> byte().
 at(Board, {X, Y}) ->
   at(Board, X, Y).
+
+-spec find_clickables(t()) -> [{non_neg_integer(), non_neg_integer()}].
+find_clickables(Board) ->
+  find_clickables(Board, Board, 0, 0, [], sets:new()).
+
+find_clickables(_Board, [], _, _, Acc, _) -> Acc;
+find_clickables(Board, [[]|Fss], X, _, Acc, Checked) ->
+  find_clickables(Board, Fss, X+1, 0, Acc, Checked);
+find_clickables(Board, [[_|Fs]|Fss], X, Y, Acc, Checked) ->
+  IsElement = sets:is_element({X, Y}, Checked),
+  if
+    IsElement ->
+      find_clickables(Board, [Fs|Fss], X, Y+1, Acc, Checked);
+    true -> % This means else!
+      FieldsSet = flood_find(Board, X, Y),
+      %FieldsSet = sets:from_list(Fields),
+      NewChecked = sets:union(Checked, FieldsSet),
+      SetSize = sets:size(FieldsSet),
+      if
+        SetSize > 1 ->
+          NewAcc = [{X, Y}|Acc];
+        true -> % Really, this IS else!
+          NewAcc = Acc
+      end,
+      find_clickables(Board, [Fs|Fss], X, Y+1, NewAcc, NewChecked)
+  end.
+
+flood_find(Board, X, Y) ->
+  Color =  at(Board, X, Y),
+  if
+    Color /= 0 ->
+      flood_find(Board, matrix:num_cols(Board), matrix:num_rows(Board), Color, [{X, Y}], sets:new());
+    true ->
+      sets:new()
+  end.
+
+flood_find(_,     _,  _,  _,     [],             Acc) -> Acc;
+flood_find(Board, MX, MY, Color, [{X, Y}|Stack], Acc) when (X>=0) and (Y>=0) and (X<MX) and (Y<MY) ->
+  CurColor = at(Board, X, Y),
+  Checked  = sets:is_element({X,Y}, Acc),
+  if (CurColor == Color) and not Checked ->
+      NewAcc   = sets:add_element({X,Y}, Acc),
+      NewStack = [{X+1,Y}, {X-1,Y}, {X,Y+1}, {X,Y-1}|Stack];
+    true ->
+      NewAcc   = Acc,
+      NewStack = Stack
+  end,
+  flood_find(Board, MX, MY, Color, NewStack, NewAcc);
+flood_find(Board, MX, MY, Color, [{_, _}|Stack], Acc) ->
+  flood_find(Board, MX, MY, Color, Stack, Acc).
 
 down_grav(Board) ->
   lists:map(fun(L) ->
@@ -113,5 +164,22 @@ at_tuple_test() ->
   ?assertEqual(at(B, {0, 0}), 0),
   ?assertEqual(at(B, {1, 0}), 2),
   ?assertEqual(at(B, {4, 3}), 3).
+
+flood_find_test() ->
+  B = example_board(),
+  Set  = flood_find(B, 1, 0),
+  List = sets:to_list(Set),
+  ?assertEqual(lists:sort(List), [{1,0},{2,0},{2,1}]).
+
+find_clickables_test() ->
+  B = example_board(),
+  List = find_clickables(B),
+  ?assertEqual(lists:sort(List), [{1,0},{2,3},{4,2}]).
+
+find_clickables_moved_test() ->
+  B = example_board(),
+  C = grav_board(B),
+  List = find_clickables(C),
+  ?assertEqual(lists:sort(List), [{0,0},{2,0},{3,2}]).
 
 -endif.
