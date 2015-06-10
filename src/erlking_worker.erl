@@ -62,8 +62,7 @@ handle_cast({progress, Board, Move, History} = _Job, S) ->
 %%%%%%% erlking_pool:add_job({analyze, NewBoard, NewHistory}),
             AMoves = gameboard:find_clickables(NewBoard),
             lists:map(fun ({SendMove, Potential}) ->
-                              if Potential >= 1 -> erlking_pool:add_job({progress, NewBoard, SendMove, NewHistory});
-                                  true -> erlking_pool:add_job({low, {progress, NewBoard, SendMove, NewHistory}}) end
+                              erlking_pool:add_job({progress, NewBoard, Potential, SendMove, NewHistory})
                       end, AMoves),
             {noreply, NewState}
     end.
