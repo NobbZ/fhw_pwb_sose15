@@ -43,5 +43,5 @@ init([]) ->
   ]}}.
 
 queue() ->
-  {erlking_queue, {erlking_queue, start_link, []}, permanent, 5000, worker, [erlking_queue]}.
+  {ek_queue, {ek_queue, start_link, []}, permanent, 5000, worker, [ek_queue]}.
 
