@@ -58,16 +58,33 @@ calculate_fitness(#population{} = Pop, SameGame) ->
   %%NewIs = ek_list_helpers:pmap(F, Pop#population.individuals),
   Pop#population{individuals = NewIs}.
 
-next_generation(#population{} = Pop) ->
-  RecombinedPop = recombine(Pop),
+calculate_fitness(#individual{} = I, SameGame, Score) ->
+  NewI = ek_samegame:fitness_of(SameGame, I),
+  case NewI#individual.f > Score of
+    true ->
+      case NewI#individual.f > ek_result:get_score() of
+        true ->
+          History = ek_history:to_click_list(NewI),
+          ek_result:report(NewI#individual.f, History);
+        false ->
+          ok
+      end;
+    false ->
+      ok
+  end,
+  NewI.
+
+next_generation(#population{} = Self) ->
+  random:seed(now()),
+  RecombinedPop = recombine(Self),
   mutate(RecombinedPop).
 
 recombine(#population{} = Pop) ->
   F = fun({L, R}) ->
     case ?RECOMBINE_PROP >= 1.0 orelse random:uniform() =< ?RECOMBINE_PROP of
       true ->
-        ek_individual:one_point_crossover(L, R, random:uniform(
-          L#individual.max_hit_idx)             div 2);
+        SplitAt = random:uniform(L#individual.max_hit_idx) div 2,
+        ek_individual:one_point_crossover(L, R, SplitAt);
       false -> L
     end
   end,
