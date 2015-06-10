@@ -1,4 +1,4 @@
--module(erlking_pool).
+-module(ek_pool).
 
 -export([add_job/1]).
 
