@@ -12,16 +12,16 @@
 %% API
 -export([compare/3, equals/3, splice/3]).
 
-take(_, 0) -> [];
-take([], _) -> [];
+take(_, 0)     -> [];
+take([], _)    -> [];
 take([H|T], N) -> [H|take(T, N - 1)].
 
-drop(L, 0) -> L;
-drop([], _) -> [];
+drop(L, 0)     -> L;
+drop([], _)    -> [];
 drop([_|T], N) -> drop(T, N - 1).
 
-get_first_normalized([]) -> 0;
-get_first_normalized([0|T]) -> get_first_normalized(T);
+get_first_normalized([])               -> 0;
+get_first_normalized([0|T])            -> get_first_normalized(T);
 get_first_normalized([X|_]) when X < 0 -> -1;
 get_first_normalized([X|_]) when X > 0 -> 1.
 
