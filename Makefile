@@ -54,6 +54,7 @@ name:
 
 clean:
 	@$(CLEANCMD)
+	rm -rf doc
 .PHONY: clean
 
 rebuild: clean all
