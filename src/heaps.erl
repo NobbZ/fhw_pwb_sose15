@@ -1,6 +1,6 @@
 -module (heaps).
 -export ([new/0, new/1, add/2, drop/1, from_list/1, from_list/2, is_empty/1,
-          fetch/1, peek/1, to_list/1]).
+          fetch/1, peek/1, to_list/1, size/1]).
 
 -export_type([compare/0, t/0]).
 
@@ -40,6 +40,8 @@ new(Compare) -> #prioq{compare = Compare}.
 -spec add(t(), any()) -> t().
 add(_Q = #prioq{heap = Heap, size = N, compare = Compare}, E) ->
   #prioq{heap = meld(Heap, {E, []}, Compare), size = N+1}.
+
+size(#prioq{size = N}) -> N.
 
 -spec drop(t()) -> t().
 drop(_Q = #prioq{heap = {_, Sub}, size = N, compare = Compare}) ->
