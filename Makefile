@@ -41,7 +41,7 @@ OTPPLTFILE  = .global_plt.$(OTPVERSION)
 PLTFILE     = erlking.plt
 
 #all: $(BIN) doc
-all: $(REBAR) doc
+all: $(REBAR)
 	@$(DEPSLVCMD) > /dev/null 2> /dev/null
 	@$(COMPILECMD) > /dev/null 2> /dev/null
 .PHONY: all
@@ -98,8 +98,8 @@ TAGS:	$(ERLFILES)
 	etags $(ERLFILES)
 
 $(REBAR): rebar-src
-	cd rebar-src && ./bootstrap
-	cp rebar-src/rebar $(REBAR)
+	@( cd rebar-src && ./bootstrap )  > /dev/null 2> /dev/null
+	@cp rebar-src/rebar $(REBAR)  > /dev/null 2> /dev/null
 
 rebar-src:
 	git clone https://github.com/rebar/rebar.git $@
