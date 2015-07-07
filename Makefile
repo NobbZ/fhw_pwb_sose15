@@ -42,12 +42,12 @@ PLTFILE     = erlking.plt
 
 #all: $(BIN) doc
 all: $(REBAR) doc
-	@$(DEPSLVCMD)
-	@$(COMPILECMD)
+	@$(DEPSLVCMD) > /dev/null 2> /dev/null
+	@$(COMPILECMD) > /dev/null 2> /dev/null
 .PHONY: all
 
 run:
-	@$(ERLANG) $(ERLRUNOPTS) -eval '$(APPSTART)'
+	@$(ERLANG) $(ERLRUNOPTS) -eval '$(APPSTART)' 2> /dev/null
 
 repl: $(OBJFILES)
 	@$(REPLCMD)
@@ -78,7 +78,7 @@ rebuild: clean all
 .PHONY: rebuild
 
 $(BIN): $(OBJFILES)
-	@$(ESCRPTCMD)
+	@$(ESCRPTCMD) > /dev/null 2> /dev/null
 
 # ebin/%.beam: $(SRCDIR)/%.erl rebar.config
 # 	@$(DEPSLVCMD)
