@@ -36,7 +36,7 @@ height(Board) ->
   matrix:get_width(Board).
 
 width(Board) ->
-  matrix:get_width(Board).
+  matrix:get_height(Board).
 
 %% @doc Lets happen gravity on a board.
 %%
@@ -241,13 +241,6 @@ hash(Board) ->
 % ==============================================================================
 % Tests
 % ==============================================================================
-
--ifdef(PERF).
-
-horse_parse() ->
-  horse:repeat(1000000, ok).
-
--endif.
 
 -ifdef(TEST).
 

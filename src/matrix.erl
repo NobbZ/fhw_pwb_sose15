@@ -180,8 +180,7 @@ to_column_vecs(M) ->
 % ==============================================================================
 
 -spec at(t(), non_neg_integer(), non_neg_integer()) -> any().
-at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) when
-  ?inbetween(X, 0, (W - 1)) and ?inbetween(Y, 0, (H - 1)) ->
+at(#matrix{width = W, height = H, payload = <<M/binary>>}, X, Y) ->
   binary:at(M, Y * W + X).
 
 hash(#matrix{payload = PL}) ->
