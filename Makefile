@@ -34,7 +34,7 @@ CLASSPATHS  = $(BEAMDIR) $(DEPSBIN)
 
 APPSTART    = application:ensure_all_started(erlking).
 
-ERLRUNOPTS  = -sname $(NODENAME) -config $(NAME) +A $(SYSTHREADS) $(CLASSPATHS:%=-pa %) -noshell
+ERLRUNOPTS  = -config $(NAME) +A $(SYSTHREADS) $(CLASSPATHS:%=-pa %) -noshell
 
 OTPVERSION  = $(shell erl -noshell -eval 'io:format(erlang:system_info(otp_release)), halt().')
 OTPPLTFILE  = .global_plt.$(OTPVERSION)
